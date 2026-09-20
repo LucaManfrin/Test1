@@ -1,15 +1,10 @@
 import { defineConfig } from "astro/config";
-import cloudflare from "@astrojs/cloudflare";
 import sitemap from "@astrojs/sitemap";
 import { SITE } from "./src/site.config.ts";
 
 export default defineConfig({
   output: "static",
   site: SITE.url,
-  adapter: cloudflare({
-    platformProxy: {
-      enabled: true,
-    },
   }),
   trailingSlash: "ignore",
   build: {

@@ -14,7 +14,6 @@
     "format": "prettier --write \"**/*.{ts,js,astro,md,mdx,json,css}\""
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^7.5.0",
     "@astrojs/rss": "^4.0.7",
     "@astrojs/sitemap": "^3.2.1",
     "astro": "^4.16.10",
