@@ -1,4 +1,4 @@
-# Blue Team Zone - Redesigned
+# Blue Team Zone
 
 A clean, professional cybersecurity blog built with Astro 4 and designed for Cloudflare Pages.
 
@@ -47,19 +47,6 @@ src/
 public/              # Static assets
 ```
 
-## All Posts Migrated ✅
-
-**14 posts successfully migrated and adapted:**
-
-- **Active Directory** (9 posts): ad-incident-response, adcs-certificate-attacks, asrep-roasting, golden-ticket, hunting-kerberoasting, kerberoasting, pass-the-hash, pass-the-ticket, silver-ticket
-- **Linux** (1 post): auditd-that-survives
-- **macOS** (1 post): unified-log-persistence
-- **Threat Hunting** (1 post): beaconing-jitter
-- **Tools** (1 post): velociraptor-triage
-- **Windows** (1 post): etw-without-edr
-
-All posts retain their original content with updated frontmatter for the new schema.
-
 ## Site Config
 
 Edit `src/site.config.ts`:
@@ -85,8 +72,6 @@ export const CATEGORIES = [
 
 ### Cloudflare Pages (Recommended)
 
-**Option 1: GitHub + Cloudflare UI**
-
 1. Push to GitHub
 2. Go to Cloudflare Pages → "Create a project"
 3. Connect your repo
@@ -94,15 +79,6 @@ export const CATEGORIES = [
    - Framework: Astro
    - Build command: `npm run build`
    - Build output: `dist`
-
-**Option 2: Wrangler CLI**
-
-```bash
-npm run build
-wrangler pages deploy dist
-```
-
-See `DEPLOYMENT.md` for detailed instructions.
 
 ## Features
 
@@ -131,16 +107,6 @@ See `DEPLOYMENT.md` for detailed instructions.
 - Open Graph tags
 - Twitter card support
 - Canonical URLs
-
-## Building
-
-```bash
-npm run dev       # Dev server with hot reload
-npm run build     # Production build
-npm run preview   # Preview production build
-npm run lint      # Lint with ESLint
-npm run format    # Format with Prettier
-```
 
 ## Post Frontmatter Format
 
@@ -171,22 +137,6 @@ Your content here...
 - `tags` (empty array by default)
 - `published`, `archived`, `pinned`, `featured` (all false by default)
 
-## Troubleshooting
-
-**Posts not showing?**
-- Check `published: true` in frontmatter
-- Check `archived: false`
-- Verify frontmatter YAML is valid
-
-**Build fails?**
-```bash
-npm run build  # See detailed error messages
-```
-
-**Search not working?**
-- Check `/search-index.json` is generated in `dist/`
-- Verify Fuse.js is installed: `npm install fuse.js`
-
 ## Performance
 
 - **Pages**: < 1s load time (Cloudflare CDN)
@@ -200,9 +150,3 @@ Headers configured in `public/_headers`:
 - X-Frame-Options: SAMEORIGIN
 - X-Content-Type-Options: nosniff
 - Referrer-Policy: strict-origin-when-cross-origin
-
-## Support
-
-- Astro docs: https://docs.astro.build
-- Cloudflare Pages: https://developers.cloudflare.com/pages/
-- GitHub: https://github.com/LucaManfrin/blueteamzone.com
