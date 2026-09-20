@@ -11,7 +11,7 @@ export const SITE: SiteConfig = {
   url: "https://blueteamzone.com",
   title: "0xLuca // notes",
   description:
-    "A personal cyber security notebook: practical write-ups on Windows, Active Directory, Linux, macOS, Threat Hunting and Security Tools. No fluff, no trackers, just signal.",
+    "A personal cyber security notebook: practical write-ups on Windows, AD, Linux, macOS, Threat Hunting and Security Tools.",
   author: "Luca Manfrin",
   authorTitle: "Cyber Security Specialist",
   lang: "en",
