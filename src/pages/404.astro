@@ -1,0 +1,36 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="404 - Not Found">
+  <div class="error-container">
+    <h1>404</h1>
+    <p>The page you're looking for doesn't exist.</p>
+    <a href="/" class="back-link">← Back to Home</a>
+  </div>
+</Base>
+
+<style>
+  .error-container {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+
+  .error-container h1 {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: var(--color-accent);
+  }
+
+  .error-container p {
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .back-link {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+</style>

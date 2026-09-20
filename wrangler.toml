@@ -1,0 +1,19 @@
+name = "blueteamzone"
+type = "javascript"
+account_id = ""
+workers_dev = true
+route = ""
+zone_id = ""
+
+[env.production]
+account_id = ""
+zone_id = ""
+route = ""
+
+[build]
+command = "npm run build"
+cwd = "./"
+watch_paths = ["src/**/*.{js,ts,astro,md}"]
+
+[build.upload]
+format = "service-worker"
