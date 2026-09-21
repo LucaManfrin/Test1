@@ -10,7 +10,7 @@ export default defineConfig({
     format: "directory",
   },
   integrations: [
-    //sitemap({
+    sitemap()
       //filter: (page) =>
         //!page.includes("/404") && !page.includes("/search-index.json"),
     //}),a
