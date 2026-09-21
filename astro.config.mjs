@@ -1,5 +1,4 @@
 import { defineConfig } from "astro/config";
-import sitemap from "@astrojs/sitemap";
 import { SITE } from "./src/site.config.ts";
 
 export default defineConfig({
@@ -9,9 +8,7 @@ export default defineConfig({
   build: {
     format: "directory",
   },
-  integrations: [
-    sitemap(), // ✅ Sitemap semplice, senza filtro
-  ],
+  integrations: [],
   markdown: {
     shikiConfig: {
       themes: {
