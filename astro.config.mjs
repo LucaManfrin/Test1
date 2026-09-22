@@ -4,7 +4,7 @@ import { SITE } from "./src/site.config.ts";
 export default defineConfig({
   output: "static",
   site: SITE.url,
-  trailingSlash: "never", 
+  trailingSlash: "never",
   build: {
     format: "directory",
   },
