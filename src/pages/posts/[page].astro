@@ -9,13 +9,13 @@ export async function getStaticPaths() {
   const allPosts = await getAllPosts();
   const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
 
-  return Array.from({ length: totalPages }, (_, i) => ({
+  return Array.from({ length: totalPages - 1 }, (_, i) => ({
     params: { page: String(i + 2) }, // page 2, 3, 4...
   }));
 }
 
 const { page } = Astro.params;
-const currentPage = parseInt(page) || 1;
+const currentPage = parseInt(page) || 2;
 const allPosts = await getAllPosts();
 const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
 
@@ -44,7 +44,7 @@ const posts = allPosts.slice(startIndex, endIndex);
   <Pagination 
     currentPage={currentPage} 
     totalPages={totalPages} 
-    baseUrl="/posts/" 
+    baseUrl="/posts" 
   />
 </Base>
 
