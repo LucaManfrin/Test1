@@ -5,8 +5,11 @@
   "private": true,
   "description": "Blue Team Zone - Cybersecurity notebook with practical write-ups.",
   "scripts": {
-    "lint": "eslint . --ext .js,.ts,.astro",
-    "format": "prettier --write \"**/*.{ts,js,astro,md,mdx,json,css}\""
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.7",
