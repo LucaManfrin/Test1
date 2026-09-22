@@ -103,7 +103,7 @@ export const CATEGORIES = [
 - Subscribe in any RSS reader
 
 ### SEO
-- Automatic sitemap at `/sitemap-index.xml`
+- Automatic sitemap at `/sitemap.xml`
 - Open Graph tags
 - Twitter card support
 - Canonical URLs
