@@ -1,5 +1,6 @@
 ---
 import Base from "../../layouts/Base.astro";
+import PostCard from "../../components/PostCard.astro";
 import { getCollection } from "astro:content";
 
 export async function getStaticPaths() {
@@ -7,65 +8,72 @@ export async function getStaticPaths() {
     return data.published && !data.archived;
   });
 
-  return posts.map((post) => ({
+  const categories = [
+    ...new Set(
+      posts
+        .map((post) => post.data.category?.trim())
+        .filter((category): category is string => Boolean(category))
+    ),
+  ];
+
+  return categories.map((category) => ({
     params: {
-      slug: post.slug,
+      slug: category,
     },
     props: {
-      post,
+      category,
+      posts: posts
+        .filter((post) => post.data.category?.trim() === category)
+        .sort(
+          (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+        ),
     },
   }));
 }
 
-const { post } = Astro.props;
-const { Content } = await post.render();
+const { category, posts } = Astro.props;
 ---
 
 <Base
-  title={`${categoryLabel} - Posts`}
-  description={`All posts in the ${categoryLabel} category`}
+  title={`${category} - Blue Team Zone`}
+  description={`Posts in the ${category} category`}
 >
-  <h1>{categoryLabel}</h1>
-  <p class="category-count">{categoryPosts.length} posts</p>
+  <main>
+    <h1>{category}</h1>
 
-  <div class="posts-grid">
-    {posts.map((post) => (
-      <PostCard
-        title={post.data.title}
-        description={post.data.description}
-        date={post.data.date}
-        slug={post.slug}
-        category={post.data.category}
-        tags={post.data.tags}
-        pinned={post.data.pinned}
-      />
-    ))}
-  </div>
-
-  {totalPages > 1 && (
-    <Pagination 
-      currentPage={1} 
-      totalPages={totalPages} 
-      baseUrl={`/category/${slug}/`}
-    />
-  )}
+    <div class="posts-grid">
+      {posts.map((post) => (
+        <PostCard
+          title={post.data.title}
+          description={post.data.description}
+          date={post.data.date}
+          slug={post.slug}
+          category={post.data.category}
+          tags={post.data.tags}
+          pinned={post.data.pinned}
+        />
+      ))}
+    </div>
+  </main>
 </Base>
 
 <style>
-  h1 {
-    margin-bottom: 0.5rem;
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
   }
 
-  .category-count {
-    color: var(--color-text-muted);
+  h1 {
     margin-bottom: 2rem;
   }
 
   .posts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(350px, 1fr)
+    );
     gap: 1.5rem;
-    margin-bottom: 2rem;
   }
 
   @media (max-width: 640px) {
