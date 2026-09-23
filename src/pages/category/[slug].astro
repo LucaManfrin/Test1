@@ -1,35 +1,24 @@
 ---
 import Base from "../../layouts/Base.astro";
-import PostCard from "../../components/PostCard.astro";
-import Pagination from "../../components/Pagination.astro";
-import { getAllPosts, getCategoryLabel } from "../../lib/posts";
-import { CATEGORIES, POSTS_PER_PAGE } from "../../site.config";
+import { getCollection } from "astro:content";
 
 export async function getStaticPaths() {
-  const allPosts = await getAllPosts();
-  const categories = new Set(allPosts.map((p) => p.data.category.toLowerCase().replace(/\s+/g, "-")));
+  const posts = await getCollection("posts", ({ data }) => {
+    return data.published && !data.archived;
+  });
 
-  return Array.from(categories).map((slug) => ({
-    params: { slug },
+  return posts.map((post) => ({
+    params: {
+      slug: post.slug,
+    },
+    props: {
+      post,
+    },
   }));
 }
 
-const { slug } = Astro.params;
-const allPosts = await getAllPosts();
-
-const categoryBySlug = CATEGORIES.find((c) => c.slug === slug);
-if (!categoryBySlug) {
-  return Astro.redirect("/404");
-}
-
-const categoryPosts = allPosts.filter(
-  (post) => post.data.category.toLowerCase().replace(/\s+/g, "-") === slug
-);
-
-const totalPages = Math.ceil(categoryPosts.length / POSTS_PER_PAGE);
-const posts = categoryPosts.slice(0, POSTS_PER_PAGE);
-
-const categoryLabel = await getCategoryLabel(categoryBySlug.label);
+const { post } = Astro.props;
+const { Content } = await post.render();
 ---
 
 <Base
