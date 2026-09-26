@@ -9,19 +9,14 @@ export async function getStaticPaths() {
   const allPosts = await getAllPosts();
   const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
 
-  return Array.from(
-    { length: Math.max(totalPages - 1, 0) },
-    (_, i) => ({
-      params: {
-        page: String(i + 2),
-      },
-    })
-  );
+  return Array.from({ length: totalPages }, (_, i) => ({
+    params: { page: i === 0 ? undefined : String(i + 1) },
+  }));
 }
 
-const currentPage = Number(Astro.params.page);
+const currentPage = Astro.params.page ? Number(Astro.params.page) : 1;
 
-if (!Number.isInteger(currentPage) || currentPage < 2) {
+if (!Number.isInteger(currentPage) || currentPage < 1) {
   return Astro.redirect("/404", 302);
 }
 
@@ -33,17 +28,12 @@ if (currentPage > totalPages) {
 }
 
 const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-const posts = allPosts.slice(
-  startIndex,
-  startIndex + POSTS_PER_PAGE
-);
+const posts = allPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
+const title = currentPage === 1 ? "All Posts" : `All Posts - Page ${currentPage}`;
 ---
 
-<Base
-  title={`All Posts - Page ${currentPage}`}
-  description="Browse all articles"
->
-  <h1>All Posts (Page {currentPage})</h1>
+<Base title={title} description="Browse all articles">
+  <h1>{currentPage === 1 ? "All Posts" : `All Posts (Page ${currentPage})`}</h1>
 
   <div class="posts-grid">
     {posts.map((post) => (
@@ -59,9 +49,19 @@ const posts = allPosts.slice(
     ))}
   </div>
 
-  <Pagination
-    currentPage={currentPage}
-    totalPages={totalPages}
-    baseUrl="/posts"
-  />
+  <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl="/posts" />
 </Base>
+
+<style>
+  .posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 640px) {
+    .posts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
