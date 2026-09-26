@@ -21,6 +21,7 @@ export const SOCIAL = {
   github: "https://github.com/LucaManfrin",
   linkedin: "https://www.linkedin.com/in/lucamanfrin--",
   credly: "https://www.credly.com/users/luca-manfrin.600e2ebe",
+  mail: "hello@blueteamzone.com",
 };
 
 export const CATEGORIES = [
