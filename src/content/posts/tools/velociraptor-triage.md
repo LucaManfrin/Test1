@@ -2,7 +2,7 @@
 title: "Velociraptor for 5-Minute Endpoint Triage"
 description: "Spin up Velociraptor and run a fleet-wide hunt for suspicious persistence in minutes, no agent rollout required."
 date: 2026-06-01T11:00:00
-category: ools
+category: Tools
 tags:
   - Tools
   - Threat Hunting
