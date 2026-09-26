@@ -2,7 +2,7 @@
 title: "Reading ETW Like an EDR (Without Buying One)"
 description: "Tap directly into Event Tracing for Windows to get process, network and DNS telemetry that rivals commercial endpoint agents."
 date: 2026-05-28T16:20:00
-category: windows
+category: Windows
 tags:
   - Windows
   - Threat Hunting
