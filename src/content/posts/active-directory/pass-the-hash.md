@@ -2,7 +2,7 @@
 title: "Pass the Hash"
 description: "Pass the Hash explained in depth: NTLM internals, credential dumping methods, lateral movement toolchain, LAPS deployment, Credential Guard, Protected Users, and detection without false positives."
 date: 2026-06-12T09:30:00
-category: active-directory
+category: Active-Directory
 tags:
   - Active Directory
   - NTLM

@@ -2,7 +2,7 @@
 title: "An auditd Baseline That Survives Contact With Production"
 description: "A lean, high-signal auditd ruleset that catches real attacker behaviour on Linux without flooding your SIEM or melting the host."
 date: 2026-05-22T08:05:00
-category: linux
+category: Linux
 tags:
   - Linux
   - Threat Hunting

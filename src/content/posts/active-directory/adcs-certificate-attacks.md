@@ -2,7 +2,7 @@
 title: "ADCS Certificate Attacks: ESC1, ESC2, ESC3"
 description: "Deep dive into Active Directory Certificate Services attacks: how PKI and certificates work in AD, ESC1/ESC2/ESC3 attack mechanics, detection, hunting, and hardening, from a Microsoft infrastructure expert perspective."
 date: 2026-06-12T10:45:00
-category: active-directory
+category: Active-Directory
 tags:
   - Active Directory
   - ADCS

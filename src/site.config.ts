@@ -25,12 +25,12 @@ export const SOCIAL = {
 };
 
 export const CATEGORIES = [
-  { slug: "windows", label: "Windows" },
-  { slug: "active-directory", label: "Active Directory" },
-  { slug: "linux", label: "Linux" },
-  { slug: "macos", label: "macOS" },
-  { slug: "threat-hunting", label: "Threat Hunting" },
-  { slug: "tools", label: "Security Tools" },
+  { slug: "Windows", label: "Windows" },
+  { slug: "Active-Directory", label: "Active Directory" },
+  { slug: "Linux", label: "Linux" },
+  { slug: "macOS", label: "macOS" },
+  { slug: "Threat-Hunting", label: "Threat Hunting" },
+  { slug: "Tools", label: "Security Tools" },
 ];
 
 export const POSTS_PER_PAGE = 10;

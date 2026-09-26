@@ -63,7 +63,7 @@ export const SITE: SiteConfig = {
 
 export const CATEGORIES = [
   { slug: "windows", label: "Windows" },
-  { slug: "active-directory", label: "Active Directory" },
+  { slug: "Active-Directory", label: "Active Directory" },
   // ... all 6 categories pre-configured
 ];
 ```
@@ -93,7 +93,7 @@ export const CATEGORIES = [
 - Index generated at build time
 
 ### Categories
-- 6 built-in categories (windows, active-directory, linux, macos, threat-hunting, tools)
+- 6 built-in categories (windows, Active-Directory, Linux, macOS, Threat-Hunting, tools)
 - Category pages at `/category/<slug>`
 - Related posts shown on each post detail page
 
@@ -115,7 +115,7 @@ export const CATEGORIES = [
 title: "Your Post Title"
 description: "Short description for cards and meta"
 date: 2026-01-20T10:30:00
-category: "active-directory"  # Slug format
+category: "Active-Directory"  # Slug format
 tags:
   - tag1
   - tag2

@@ -2,7 +2,7 @@
 title: "Hunting Kerberoasting Without Drowning in 4769s"
 description: "A practical, signal-first approach to detecting Kerberoasting using service ticket telemetry, encryption downgrades, and behavioural baselines."
 date: 2026-06-05T09:15:00
-category: active-directory
+category: Active-Directory
 tags:
   - Active Directory
   - Threat Hunting

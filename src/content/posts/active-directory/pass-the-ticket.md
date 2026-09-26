@@ -2,7 +2,7 @@
 title: "Pass the Ticket"
 description: "Pass the Ticket deep dive: Kerberos ticket anatomy, extraction methods, cross-host injection, impossibility detection, protective controls, and hunting concurrent Kerberos sessions."
 date: 2026-06-12T09:45:00
-category: active-directory
+category: Active-Directory
 tags:
   - Active Directory
   - Kerberos

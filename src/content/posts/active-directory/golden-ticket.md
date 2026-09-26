@@ -2,7 +2,7 @@
 title: "Golden Ticket"
 description: "Golden Ticket complete reference: krbtgt cryptographic role, DCSync mechanics, forging with Mimikatz and Impacket, detection with MDI and event correlation, and the two-rotation remediation procedure."
 date: 2026-06-12T10:15:00
-category: active-directory
+category: Active-Directory
 tags:
   - Active Directory
   - Kerberos

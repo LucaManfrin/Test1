@@ -2,7 +2,7 @@
 title: "Finding C2 Beacons Hiding Behind Jitter"
 description: "How to detect command-and-control beaconing in proxy and netflow logs even when malware randomises its callback interval."
 date: 2026-06-03T18:40:00
-category: threat-hunting
+category: Threat-Hunting
 tags:
   - Threat Hunting
   - Network

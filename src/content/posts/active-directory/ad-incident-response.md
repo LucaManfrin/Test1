@@ -2,7 +2,7 @@
 title: "Active Directory Incident Response & Hardening"
 description: "Complete AD IR playbook: post-incident investigation checklist, remediation procedures (krbtgt double reset, privilege cleanup, GPO audit), and hardening best practices from a Microsoft expert perspective."
 date: 2026-06-12T10:30:00
-category: active-directory
+category: Active-Directory
 tags:
   - Active Directory
   - Incident Response

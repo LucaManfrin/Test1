@@ -2,7 +2,7 @@
 title: "Silver Ticket"
 description: "Silver Ticket attack in depth: PAC internals, service account hash exploitation, KDC bypass mechanics, per-service detection, PAC validation enforcement, and gMSA remediation."
 date: 2026-06-12T10:00:00
-category: active-directory
+category: Active-Directory
 tags:
   - Active Directory
   - Kerberos

@@ -2,7 +2,7 @@
 title: "Kerberoasting"
 description: "A complete deep dive into Kerberoasting: attack mechanics, tooling, honeypot strategies, detection logic, threat hunting, and layered prevention, nothing taken for granted."
 date: 2026-06-12T09:00:00
-category: active-directory
+category: Active-Directory
 tags:
   - Active Directory
   - Kerberos

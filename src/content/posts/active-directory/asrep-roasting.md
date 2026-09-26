@@ -2,7 +2,7 @@
 title: "AS-REP Roasting"
 description: "Complete AS-REP Roasting reference: Kerberos preauthentication internals, unauthenticated attack execution, honeypot accounts, detection logic, and prevention, with every step explained."
 date: 2026-06-12T09:15:00
-category: active-directory
+category: Active-Directory
 tags:
   - Active Directory
   - Kerberos

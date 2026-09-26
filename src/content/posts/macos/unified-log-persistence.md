@@ -2,9 +2,9 @@
 title: "Catching macOS Persistence in the Unified Log"
 description: "Use macOS Unified Logging and FSEvents to detect launch agents, login items and other persistence the moment they're planted."
 date: 2026-05-14T13:30:00
-category: macos
+category: macOS
 tags:
-  - macos
+  - macOS
   - Threat Hunting
   - persistence
 author: "Luca Manfrin"
