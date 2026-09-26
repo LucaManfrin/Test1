@@ -36,7 +36,7 @@ Remove-EtwTraceSession -Name "hunt"
 
 ## What to hunt
 
-DNS-Client events tie a *process* to the domains it resolves — that mapping is
+DNS-Client events tie a *process* to the domains it resolves, that mapping is
 gold for catching malware phoning home. Kernel-Process events give you parent/
 child lineage to spot `winword.exe → cmd.exe → powershell.exe` chains.
 

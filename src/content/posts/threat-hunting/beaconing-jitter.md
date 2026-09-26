@@ -15,7 +15,7 @@ pinned: true
 
 ## Scenario
 
-Modern implants add *jitter* — they randomise the sleep between callbacks so a
+Modern implants add *jitter*, they randomise the sleep between callbacks so a
 naive "same interval every N seconds" detection misses them. Good news: jitter
 hides the mean, not the *distribution*.
 

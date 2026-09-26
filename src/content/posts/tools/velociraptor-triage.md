@@ -1,6 +1,6 @@
 ---
 title: "Velociraptor for 5-Minute Endpoint Triage"
-description: "Spin up Velociraptor and run a fleet-wide hunt for suspicious persistence in minutes — no agent rollout required."
+description: "Spin up Velociraptor and run a fleet-wide hunt for suspicious persistence in minutes, no agent rollout required."
 date: 2026-06-01T11:00:00
 category: tools
 tags:
@@ -32,7 +32,7 @@ velociraptor collector \
 
 > [!TIP]
 > The collector needs no server and no install. It runs from a USB stick and
-> leaves nothing behind — ideal for "just look at this one box" requests.
+> leaves nothing behind, ideal for "just look at this one box" requests.
 
 ## Fleet hunt with VQL
 
@@ -51,6 +51,6 @@ WHERE CommandLine =~ "powershell.*-enc"
 ## Conclusion
 
 Velociraptor's superpower is *time to first answer*. A standalone collector for
-one box, a VQL hunt for the fleet — either way you're triaging in minutes, not
+one box, a VQL hunt for the fleet, either way you're triaging in minutes, not
 after a week-long agent rollout.
 t.

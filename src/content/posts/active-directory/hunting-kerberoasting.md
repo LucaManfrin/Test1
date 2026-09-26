@@ -18,7 +18,7 @@ featured: false
 
 Kerberoasting is old, noisy on paper, and still works. An attacker requests
 service tickets (TGS) for accounts with a Service Principal Name, then cracks
-the ciphertext offline. The classic detection — alert on Event ID `4769` — drowns
+the ciphertext offline. The classic detection, alert on Event ID `4769`, drowns
 you in false positives because every normal logon generates them too.
 
 ## The signal that actually matters
@@ -54,7 +54,7 @@ because the attacker reaches for SPNs the source account has never touched.
 
 ## Conclusion
 
-Kerberoasting detection isn't about more events — it's about fewer, sharper
+Kerberoasting detection isn't about more events, it's about fewer, sharper
 ones. Encryption downgrades plus per-principal SPN baselines plus one honey-SPN
 will catch the vast majority of real attempts without burying your analysts.
 s.

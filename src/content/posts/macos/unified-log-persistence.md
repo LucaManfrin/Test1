@@ -48,7 +48,7 @@ ls -la ~/Library/LaunchAgents /Library/LaunchAgents /Library/LaunchDaemons
 
 ## Conclusion
 
-You don't need a third-party agent to catch most macOS persistence — streamed
+You don't need a third-party agent to catch most macOS persistence, streamed
 Unified Logging plus Endpoint Security on a handful of directories covers the
 techniques real intrusions actually use.
 e.

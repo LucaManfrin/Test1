@@ -20,9 +20,9 @@ featured: false
 
 This post is a field reference for Active Directory incident response and hardening. It covers three phases:
 
-1. **Investigation** — what to collect and examine after a suspected AD compromise
-2. **Remediation** — the specific actions required to evict an attacker and restore integrity
-3. **Hardening** — the structural changes that prevent recurrence
+1. **Investigation**, what to collect and examine after a suspected AD compromise
+2. **Remediation**, the specific actions required to evict an attacker and restore integrity
+3. **Hardening**, the structural changes that prevent recurrence
 
 Every command is tested against Windows Server 2016+ and Windows 10/11 domain environments. Where something has a known compatibility caveat or gotcha, it is called out explicitly.
 
@@ -32,9 +32,9 @@ Every command is tested against Windows Server 2016+ and Windows 10/11 domain en
 
 The goal of the investigation phase is to understand **blast radius**: what was compromised, what accounts have been touched, and what persistence mechanisms may have been planted.
 
-Run everything below from a clean, trusted machine — ideally a Privileged Access Workstation (PAW) with a freshly provisioned, domain-joined account created specifically for the investigation.
+Run everything below from a clean, trusted machine, ideally a Privileged Access Workstation (PAW) with a freshly provisioned, domain-joined account created specifically for the investigation.
 
-### 1.1 — Domain Functional Level and Schema Version
+### 1.1, Domain Functional Level and Schema Version
 
 The domain and forest functional level (DFL/FFL) determines which security features are available. A low functional level is both a risk indicator and a technical constraint.
 
@@ -43,7 +43,7 @@ The domain and forest functional level (DFL/FFL) determines which security featu
 Get-ADDomain  | Select-Object Name, DomainMode, DomainSID
 Get-ADForest  | Select-Object Name, ForestMode, RootDomain, Domains, GlobalCatalogs
 
-# Schema version (maps to OS versions — useful to understand what security features exist)
+# Schema version (maps to OS versions, useful to understand what security features exist)
 $schemaDN = (Get-ADForest).SchemaNamingContext
 (Get-ADObject $schemaDN -Properties objectVersion).objectVersion
 # Common values: 44=2003, 47=2008, 56=2012, 69=2016, 87=2019, 88=2022
@@ -51,10 +51,10 @@ $schemaDN = (Get-ADForest).SchemaNamingContext
 
 Ideally: Windows Server 2016 DFL or higher, to support Protected Users Group features and Kerberos Armoring (FAST).
 
-### 1.2 — Domain Admin Enumeration
+### 1.2, Domain Admin Enumeration
 
 ```powershell
-# All members of Domain Admins (recursive — catches nested group membership)
+# All members of Domain Admins (recursive, catches nested group membership)
 Get-ADGroupMember 'Domain Admins' -Recursive |
   Select-Object SamAccountName, objectClass, DistinguishedName |
   Sort-Object objectClass, SamAccountName
@@ -88,9 +88,9 @@ foreach ($group in $privilegedGroups) {
 > [!WARNING]
 > **DnsAdmins** is frequently overlooked. Any member of DnsAdmins can execute arbitrary code on a DC by loading a malicious DLL via the DNS service. This is a Tier 0 equivalent privilege. Audit it every time.
 
-### 1.3 — Accounts with AdminCount = 1
+### 1.3, Accounts with AdminCount = 1
 
-`AdminCount = 1` is set automatically by the SDProp process on accounts that are (or ever were) members of protected groups. It means the SDProp process took ownership of the ACL. Many organizations have ghost accounts with AdminCount=1 from long-removed group memberships — attackers know this and look for them.
+`AdminCount = 1` is set automatically by the SDProp process on accounts that are (or ever were) members of protected groups. It means the SDProp process took ownership of the ACL. Many organizations have ghost accounts with AdminCount=1 from long-removed group memberships, attackers know this and look for them.
 
 ```powershell
 # All user accounts with AdminCount=1
@@ -115,7 +115,7 @@ Get-ADUser -Filter { AdminCount -eq 1 } | Where-Object {
 } | Select-Object SamAccountName, DistinguishedName
 ```
 
-### 1.4 — Accounts with Sensitive Privileges
+### 1.4, Accounts with Sensitive Privileges
 
 ```powershell
 # Accounts with "Password Not Required" flag (PASSWD_NOTREQD, UAC bit 0x20)
@@ -138,7 +138,7 @@ Get-ADUser -Filter { DoesNotRequirePreAuth -eq $true } `
   -Properties DoesNotRequirePreAuth, Enabled, PasswordLastSet |
   Select-Object SamAccountName, Enabled, PasswordLastSet
 
-# Accounts allowed to delegate (unconstrained delegation — very dangerous)
+# Accounts allowed to delegate (unconstrained delegation, very dangerous)
 Get-ADUser -Filter { TrustedForDelegation -eq $true } `
   -Properties TrustedForDelegation, ServicePrincipalName |
   Select-Object SamAccountName, ServicePrincipalName
@@ -154,9 +154,9 @@ Get-ADUser -Filter { TrustedToAuthForDelegation -eq $true } `
 ```
 
 > [!IMPORTANT]
-> **Unconstrained delegation** (`TrustedForDelegation = $true`) is extremely dangerous. Any computer or user with unconstrained delegation can receive and reuse TGTs from connecting users. If a DC connects to a service running on an unconstrained delegation host, the DC's krbtgt-signed TGT is cached there. DCs should never connect to servers with unconstrained delegation — yet this is common in many environments.
+> **Unconstrained delegation** (`TrustedForDelegation = $true`) is extremely dangerous. Any computer or user with unconstrained delegation can receive and reuse TGTs from connecting users. If a DC connects to a service running on an unconstrained delegation host, the DC's krbtgt-signed TGT is cached there. DCs should never connect to servers with unconstrained delegation, yet this is common in many environments.
 
-### 1.5 — Accounts with Non-Empty Description Fields
+### 1.5, Accounts with Non-Empty Description Fields
 
 Attackers look for password hints or sensitive information stored in the Description attribute. This is embarrassingly common.
 
@@ -169,11 +169,11 @@ Get-ADUser -Filter { Description -like "*" } `
 ```
 
 Look specifically for:
-- `Password123`, `Summer2024!`, `Welcome1` — literal passwords
-- `Admin account for X` — service role descriptions that hint at privilege
+- `Password123`, `Summer2024!`, `Welcome1`, literal passwords
+- `Admin account for X`, service role descriptions that hint at privilege
 - IP addresses, server names, connection strings
 
-### 1.6 — Service Principal Names (Kerberoasting Surface)
+### 1.6, Service Principal Names (Kerberoasting Surface)
 
 ```powershell
 # All kerberoastable accounts with password age and group membership
@@ -196,10 +196,10 @@ Get-ADUser -Filter { ServicePrincipalName -ne "$null" } `
   Sort-Object PasswordAgeDays -Descending
 
 # Any SPN-bearing account in a privileged group = critical risk
-# (already covered in 1.3 cross-reference — repeat here for clarity)
+# (already covered in 1.3 cross-reference, repeat here for clarity)
 ```
 
-### 1.7 — Orphan SIDs and Stale Objects
+### 1.7, Orphan SIDs and Stale Objects
 
 Orphan SIDs appear in group memberships when the referenced account has been deleted. They can indicate lateral cleanup by an attacker who deleted their account but left SID artifacts.
 
@@ -238,9 +238,9 @@ Get-ADComputer -Filter { LastLogonDate -lt $staleDate -and Enabled -eq $true } `
   Sort-Object LastLogonDate
 ```
 
-### 1.8 — ACL Analysis (Delegation and Backdoors)
+### 1.8, ACL Analysis (Delegation and Backdoors)
 
-Attackers frequently plant ACL backdoors — granting themselves or a controlled account persistent rights over privileged objects without being group members.
+Attackers frequently plant ACL backdoors, granting themselves or a controlled account persistent rights over privileged objects without being group members.
 
 ```powershell
 # Check ACLs on the domain object itself (DCSync, GPO link manipulation)
@@ -272,13 +272,13 @@ foreach ($group in @('Domain Admins','Enterprise Admins','krbtgt')) {
 
 # BloodHound-style: find all objects where a specific account has WriteDACL, WriteOwner,
 # GenericAll, or GenericWrite
-# Best done via BloodHound + SharpHound — native PowerShell is slow at scale
+# Best done via BloodHound + SharpHound, native PowerShell is slow at scale
 ```
 
 > [!TIP]
-> **BloodHound** (with the SharpHound collector) is the most effective tool for mapping ACL attack paths. Run it as part of every AD IR to visualize the full privilege graph — manual ACL review misses chained delegation paths.
+> **BloodHound** (with the SharpHound collector) is the most effective tool for mapping ACL attack paths. Run it as part of every AD IR to visualize the full privilege graph, manual ACL review misses chained delegation paths.
 
-### 1.9 — Recently Modified GPOs
+### 1.9, Recently Modified GPOs
 
 Attackers modify GPOs to push persistence (scheduled tasks, logon scripts, registry keys, user rights assignments):
 
@@ -294,7 +294,7 @@ $suspectGPO = "Default Domain Policy"   # replace with flagged GPO name
 Get-GPOReport -Name $suspectGPO -ReportType HTML -Path "C:\Temp\$suspectGPO.html"
 ```
 
-### 1.10 — Recently Modified AD Objects
+### 1.10, Recently Modified AD Objects
 
 ```powershell
 # All AD objects (users, groups, computers, GPOs) modified in the last 7 days
@@ -304,7 +304,7 @@ Get-ADObject -Filter { WhenChanged -gt $cutoff } `
   Select-Object Name, ObjectClass, WhenChanged, WhenCreated, DistinguishedName |
   Sort-Object WhenChanged -Descending
 
-# New accounts created in last 30 days — look for rogue accounts
+# New accounts created in last 30 days, look for rogue accounts
 Get-ADUser -Filter { WhenCreated -gt $cutoff } `
   -Properties WhenCreated, Enabled, MemberOf, AdminCount |
   Select-Object SamAccountName, Enabled, WhenCreated, AdminCount,
@@ -314,7 +314,7 @@ Get-ADUser -Filter { WhenCreated -gt $cutoff } `
     }
 ```
 
-### 1.11 — krbtgt Account Status
+### 1.11, krbtgt Account Status
 
 ```powershell
 Get-ADUser -Identity krbtgt -Properties PasswordLastSet, PasswordNeverExpires,
@@ -329,10 +329,10 @@ Write-Host "krbtgt: domain created $daysSinceCreation days ago | password last c
 # If daysSinceReset ≈ daysSinceCreation → krbtgt has NEVER been rotated
 ```
 
-### 1.12 — Domain Trusts
+### 1.12, Domain Trusts
 
 ```powershell
-# Enumerate all trusts — each trust is a potential lateral movement path
+# Enumerate all trusts, each trust is a potential lateral movement path
 Get-ADTrust -Filter * |
   Select-Object Name, TrustType, TrustDirection, TrustAttributes, IntraForest
 
@@ -343,7 +343,7 @@ Get-ADTrust -Filter * |
 # 0x40 = TREAT_AS_EXTERNAL (quarantine)
 ```
 
-### 1.13 — Security Event Log Health
+### 1.13, Security Event Log Health
 
 ```powershell
 # Verify audit policy is configured correctly on all DCs
@@ -364,7 +364,7 @@ Get-WinEvent -FilterHashtable @{ LogName = 'System'; Id = 104 } -MaxEvents 20 |
 
 ## Part 2: Remediation Procedures
 
-### 2.1 — krbtgt Double Password Reset
+### 2.1, krbtgt Double Password Reset
 
 This is the single most important remediation action after a domain compromise. It invalidates all outstanding Golden Tickets and forces all users to reauthenticate.
 
@@ -382,10 +382,10 @@ Write-Host "krbtgt KVNO before Phase 1: $beforeHash"
 # Use Microsoft's official rotation script
 # Download: https://github.com/microsoft/New-KrbtgtKeys.ps1
 
-# Step 1: Simulation — verify no issues before executing
+# Step 1: Simulation, verify no issues before executing
 .\New-KrbtgtKeys.ps1 -Mode Simulation -Scope AllDCsInForest
 
-# Step 2: Phase 1 rotation — execute during change window
+# Step 2: Phase 1 rotation, execute during change window
 .\New-KrbtgtKeys.ps1 -Mode Reset -Scope AllDCsInForest
 
 # Verify Phase 1 completed on all DCs
@@ -395,7 +395,7 @@ Write-Host "krbtgt KVNO before Phase 1: $beforeHash"
 # Communicate: users may need to reauthenticate
 # Monitor for service disruptions during this window
 
-# Step 3: Phase 2 rotation — 10+ hours after Phase 1
+# Step 3: Phase 2 rotation, 10+ hours after Phase 1
 .\New-KrbtgtKeys.ps1 -Mode Reset -Scope AllDCsInForest
 
 $afterHash = (Get-ADUser krbtgt -Properties 'msDS-KeyVersionNumber').'msDS-KeyVersionNumber'
@@ -406,7 +406,7 @@ Write-Host "krbtgt KVNO after Phase 2: $afterHash"
 > [!WARNING]
 > If you have RODC (Read-Only Domain Controllers), each RODC has its own krbtgt account (e.g., `krbtgt_12345`). These must also be rotated separately. The New-KrbtgtKeys.ps1 script handles this with `-Scope AllDCsInForest`.
 
-### 2.2 — Domain Admin and Privileged Account Password Resets
+### 2.2, Domain Admin and Privileged Account Password Resets
 
 After a compromise, assume all credentials for privileged accounts are known to the attacker.
 
@@ -435,12 +435,12 @@ foreach ($group in @('Enterprise Admins','Schema Admins')) {
 }
 ```
 
-### 2.3 — Reset All Domain User Passwords (Full Compromise Scenario)
+### 2.3, Reset All Domain User Passwords (Full Compromise Scenario)
 
 If the NTDS.dit was extracted (all hashes compromised), every domain user password must be reset:
 
 ```powershell
-# Reset all enabled user accounts — this is a major operational event
+# Reset all enabled user accounts, this is a major operational event
 # Notify users, prepare helpdesk, plan for a full reauthentication wave
 
 $allUsers = Get-ADUser -Filter { Enabled -eq $true } |
@@ -460,7 +460,7 @@ Write-Host "Reset $($allUsers.Count) user accounts"
 > [!IMPORTANT]
 > Before bulk-resetting all user passwords: notify management, HR, and helpdesk. Prepare for an influx of locked-out calls. Consider staggering the reset by OU (workstations first, then servers, then privileged accounts). Have out-of-band communication ready for users who cannot receive their new credentials.
 
-### 2.4 — Service Account Password Rotation
+### 2.4, Service Account Password Rotation
 
 ```powershell
 # Identify service accounts (SPN-bearing)
@@ -479,12 +479,12 @@ Set-ADAccountPassword -Identity "svc_sql" `
   -NewPassword (ConvertTo-SecureString "NewSecure!P@ssw0rd2026" -AsPlainText -Force) -Reset
 ```
 
-### 2.5 — NTLM Hash Invalidation for Local Accounts
+### 2.5, NTLM Hash Invalidation for Local Accounts
 
 LAPS should be deployed for machine-specific password management, but existing local account passwords must be rotated:
 
 ```powershell
-# If LAPS is deployed — force immediate rotation on all machines
+# If LAPS is deployed, force immediate rotation on all machines
 Get-ADComputer -Filter * | ForEach-Object {
   # Trigger LAPS password rotation via registry flag
   Set-ItemProperty `
@@ -497,7 +497,7 @@ Get-LapsADPassword -Identity "WORKSTATION01" -AsPlainText
 Reset-LapsPassword -Identity "WORKSTATION01"
 ```
 
-### 2.6 — GPO Audit and Remediation
+### 2.6, GPO Audit and Remediation
 
 ```powershell
 # 1. Export and review all recently modified GPOs
@@ -530,7 +530,7 @@ Get-ChildItem -Path "\\$env:USERDNSDOMAIN\SYSVOL" -Recurse `
   Sort-Object LastWriteTime -Descending
 ```
 
-### 2.7 — Revoke Suspicious ACL Permissions
+### 2.7, Revoke Suspicious ACL Permissions
 
 ```powershell
 # Remove DCSync rights from non-DC accounts on the domain NC
@@ -562,13 +562,13 @@ $acl.Access | Where-Object {
 }
 ```
 
-### 2.8 — Remove Rogue Accounts and Unauthorized Group Members
+### 2.8, Remove Rogue Accounts and Unauthorized Group Members
 
 ```powershell
 # Review and remove unrecognized accounts from privileged groups
 $domainAdmins = Get-ADGroupMember 'Domain Admins' | Select-Object SamAccountName
 
-# Present the list — remove any that are not authorized
+# Present the list, remove any that are not authorized
 foreach ($member in $domainAdmins) {
   $confirm = Read-Host "Is $($member.SamAccountName) authorized in Domain Admins? [y/n]"
   if ($confirm -eq 'n') {
@@ -583,7 +583,7 @@ Disable-ADAccount -Identity "suspicioususer"
 Remove-ADUser -Identity "suspicioususer" -Confirm:$false
 ```
 
-### 2.9 — Check and Remediate Unconstrained Delegation
+### 2.9, Check and Remediate Unconstrained Delegation
 
 ```powershell
 # Remove unconstrained delegation from user accounts
@@ -593,7 +593,7 @@ Get-ADUser -Filter { TrustedForDelegation -eq $true } |
     Set-ADAccountControl $_ -TrustedForDelegation $false
   }
 
-# For computer accounts — requires application owner coordination
+# For computer accounts, requires application owner coordination
 Get-ADComputer -Filter { TrustedForDelegation -eq $true } |
   Where-Object { $_.Name -notmatch 'DC\d+|EXCHANGE|LYNC' } |  # adjust exclusions
   Select-Object Name, DistinguishedName
@@ -603,7 +603,7 @@ Get-ADComputer -Filter { TrustedForDelegation -eq $true } |
 
 ## Part 3: Hardening Best Practices
 
-### 3.1 — Migrate Service Accounts to gMSA
+### 3.1, Migrate Service Accounts to gMSA
 
 Group Managed Service Accounts eliminate the service account password management problem entirely. The password is 240 characters, randomly generated, and automatically rotated.
 
@@ -629,7 +629,7 @@ Test-ADServiceAccount   -Identity "gmsa_iis"
 # Leave password blank
 ```
 
-### 3.2 — Implement Microsoft Tiering Model (PAW)
+### 3.2, Implement Microsoft Tiering Model (PAW)
 
 The Tier model separates administrative credentials so that Tier 0 credentials (Domain Admin, DC admin) never touch Tier 1 or Tier 2 machines.
 
@@ -651,12 +651,12 @@ The Tier model separates administrative credentials so that Tier 0 credentials (
 # "Deny access to this computer from the network" → Domain Admins
 
 # Create separate admin accounts for each tier
-# T0Admin_Username — only usable on DCs/PAWs (Tier 0)
-# T1Admin_Username — only usable on servers (Tier 1)
-# T2Admin_Username — only usable on workstations (Tier 2)
+# T0Admin_Username, only usable on DCs/PAWs (Tier 0)
+# T1Admin_Username, only usable on servers (Tier 1)
+# T2Admin_Username, only usable on workstations (Tier 2)
 ```
 
-### 3.3 — Enable Protected Users for All Tier 0 Accounts
+### 3.3, Enable Protected Users for All Tier 0 Accounts
 
 ```powershell
 # Add all privileged accounts to Protected Users
@@ -681,7 +681,7 @@ foreach ($group in $tier0Groups) {
 > [!WARNING]
 > Service accounts using NTLM, any account that needs NTLM authentication, and accounts that use DES/RC4-dependent applications must NOT be added to Protected Users. Test each account individually before bulk-adding.
 
-### 3.4 — Disable RC4 / Enforce AES Kerberos
+### 3.4, Disable RC4 / Enforce AES Kerberos
 
 ```powershell
 # Enforce AES on all service accounts (prioritize kerberoastable accounts)
@@ -707,7 +707,7 @@ Get-ADUser -Filter * -Properties 'msDS-SupportedEncryptionTypes' |
   Select-Object SamAccountName, 'msDS-SupportedEncryptionTypes'
 ```
 
-### 3.5 — Enable Microsoft Entra Password Protection (formerly Azure AD Password Protection)
+### 3.5, Enable Microsoft Entra Password Protection (formerly Azure AD Password Protection)
 
 Entra Password Protection prevents the use of known-weak passwords and organization-specific banned terms, even in on-premises AD.
 
@@ -726,7 +726,7 @@ Register-AzureADPasswordProtectionAgent
 # Add custom banned password list (company name variants, common local terms)
 ```
 
-### 3.6 — Deploy LAPS for All Machines
+### 3.6, Deploy LAPS for All Machines
 
 ```powershell
 # Windows LAPS (built into Windows 11 22H2+ / Server 2022+)
@@ -749,7 +749,7 @@ Get-ADComputer -Filter * -Properties msLAPS-Password, msLAPS-PasswordExpirationT
   Select-Object Name   # machines not yet reporting LAPS passwords
 ```
 
-### 3.7 — Audit Policy — Enable All Relevant Categories
+### 3.7, Audit Policy, Enable All Relevant Categories
 
 ```powershell
 # Configure comprehensive audit policy via auditpol
@@ -787,7 +787,7 @@ auditpol /set /subcategory:"Security System Extension" /success:enable /failure:
 auditpol /get /category:*
 ```
 
-### 3.8 — Sysmon Deployment on All Machines
+### 3.8, Sysmon Deployment on All Machines
 
 Sysmon provides process creation, network connection, LSASS access, and file creation telemetry that native Windows audit logs do not.
 
@@ -806,7 +806,7 @@ Get-WinEvent -FilterHashtable @{
 } -MaxEvents 5
 ```
 
-### 3.9 — Disable WDigest Credential Caching
+### 3.9, Disable WDigest Credential Caching
 
 WDigest stores plaintext credentials in LSASS memory on older systems. It should be disabled everywhere:
 
@@ -829,7 +829,7 @@ Invoke-Command -ComputerName (Get-ADComputer -Filter *).Name -ScriptBlock {
 }
 ```
 
-### 3.10 — Enable LSA Protection and Credential Guard
+### 3.10, Enable LSA Protection and Credential Guard
 
 ```powershell
 # LSA Protection (PPL)
@@ -852,7 +852,7 @@ Set-ItemProperty `
 #   Credential Guard Configuration: Enabled with UEFI lock
 ```
 
-### 3.11 — Restrict NTLM
+### 3.11, Restrict NTLM
 
 ```powershell
 # Phase 1: Enable NTLM auditing (do not block yet)
@@ -873,7 +873,7 @@ Get-WinEvent -FilterHashtable @{
 # (Apply to workstation OU GPO first, then server OU)
 ```
 
-### 3.12 — Enable Kerberos Armoring (FAST)
+### 3.12, Enable Kerberos Armoring (FAST)
 
 Kerberos Flexible Authentication Secure Tunneling (FAST) protects the AS-REQ exchange from interception and tampering. Requires Windows Server 2012+ DFL.
 
@@ -889,7 +889,7 @@ Kerberos Flexible Authentication Secure Tunneling (FAST) protects the AS-REQ exc
 #   Kerberos client support for claims, compound authentication and Kerberos armoring → Enabled
 ```
 
-### 3.13 — Deploy Microsoft Defender for Identity
+### 3.13, Deploy Microsoft Defender for Identity
 
 MDI is the definitive detection tool for Golden Ticket, DCSync, Pass-the-Hash, Pass-the-Ticket, and reconnaissance attacks.
 
@@ -910,4 +910,4 @@ Get-Service -Name "AATPSensor" -ComputerName dc01.domain.local
 
 ## Conclusion
 
-AD incident response is a race: the attacker is counting on you not knowing the blast radius, and remediation actions like krbtgt rotation disrupt their persistence. The investigation checklist above should be executable in the first 2-4 hours of an IR. Remediation follows in priority order: krbtgt rotation first (neutralizes Golden Tickets), then privileged account resets, then service accounts. Hardening closes the gaps that allowed the initial access. None of these steps is optional — an IR that resets all passwords but doesn't rotate krbtgt has evicted the attacker from one door while leaving another unlocked.
+AD incident response is a race: the attacker is counting on you not knowing the blast radius, and remediation actions like krbtgt rotation disrupt their persistence. The investigation checklist above should be executable in the first 2-4 hours of an IR. Remediation follows in priority order: krbtgt rotation first (neutralizes Golden Tickets), then privileged account resets, then service accounts. Hardening closes the gaps that allowed the initial access. None of these steps is optional, an IR that resets all passwords but doesn't rotate krbtgt has evicted the attacker from one door while leaving another unlocked.
