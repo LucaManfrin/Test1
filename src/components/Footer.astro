@@ -20,7 +20,7 @@ import { SITE, SOCIAL } from "../site.config";
 
     <div class="footer-section">
       <h4>Follow</h4>
-      <ul>
+      <ul class="social-links">
         {SOCIAL.github && <li><a href={SOCIAL.github} target="_blank">GitHub</a></li>}
         {SOCIAL.linkedin && <li><a href={SOCIAL.linkedin} target="_blank">LinkedIn</a></li>}
         {SOCIAL.credly && <li><a href={SOCIAL.credly} target="_blank">Credly</a></li>}
@@ -66,21 +66,27 @@ import { SITE, SOCIAL } from "../site.config";
   .footer-section ul {
     list-style: none;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
   }
 
   .footer-section a {
     color: var(--color-text);
     text-decoration: none;
     font-size: 0.9rem;
-    transition: color 0.2s;
+    transition: color 0.2s, transform 0.2s;
+    display: inline-block;
   }
 
   .footer-section a:hover {
     color: var(--color-accent);
+    transform: translateX(2px);
   }
 
   .social-links {
-    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 1rem;
   }
 
