@@ -8,25 +8,6 @@ export async function getAllPosts() {
     .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 }
 
-export async function getPostsByCategory(category: string) {
-  const allPosts = await getAllPosts();
-  return allPosts.filter(
-    (post) =>
-      post.data.category.toLowerCase() === category.toLowerCase()
-  );
-}
-
-export async function getRelatedPosts(
-  currentSlug: string,
-  category: string,
-  limit: number = 3
-) {
-  const posts = await getPostsByCategory(category);
-  return posts
-    .filter((post) => post.slug !== currentSlug)
-    .slice(0, limit);
-}
-
 export async function getCategoryLabel(slug: string) {
   const cat = CATEGORIES.find((c) => c.slug === slug);
   return cat?.label || slug;
