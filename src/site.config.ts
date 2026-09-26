@@ -9,7 +9,7 @@ export interface SiteConfig {
 
 export const SITE: SiteConfig = {
   url: "https://blueteamzone.com",
-  title: "0xLuca // notes",
+  title: "BLUE TEAM ZONE",
   description:
     "A personal cyber security notebook: practical write-ups on Windows, AD, Linux, macOS, Threat Hunting and Security Tools.",
   author: "Luca Manfrin",
