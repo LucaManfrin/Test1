@@ -8,10 +8,20 @@ const allPosts = await getAllPosts();
 const pinnedPosts = allPosts.filter((post) => post.data.pinned).slice(0, 3);
 const latestPosts = allPosts.slice(0, 3);
 
-const posts = [
+let posts = [
   ...pinnedPosts.filter((p) => !latestPosts.find((l) => l.slug === p.slug)),
   ...latestPosts,
-].slice(0, 6);
+];
+
+if (posts.length < 6) {
+  const usedSlugs = new Set(posts.map((p) => p.slug));
+  const extra = allPosts
+    .filter((p) => !usedSlugs.has(p.slug))
+    .slice(0, 6 - posts.length);
+  posts = [...posts, ...extra];
+}
+
+posts = posts.slice(0, 6);
 ---
 
 <Base title={SITE.title} description={SITE.description}>
