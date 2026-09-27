@@ -25,6 +25,8 @@ const { Content } = await post.render();
   title={post.data.title}
   description={post.data.description}
 >
+  <div id="reading-progress"></div>
+
   <article>
     <div class="post-header">
       <h1>{post.data.title}</h1>
@@ -57,6 +59,17 @@ const { Content } = await post.render();
 </Base>
 
 <style>
+  #reading-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    background-color: var(--color-accent);
+    z-index: 200;
+    transition: width 0.1s linear;
+  }
+
   article {
     max-width: 800px;
     margin: 0 auto;
@@ -108,3 +121,28 @@ const { Content } = await post.render();
     color: var(--color-text-muted);
   }
 </style>
+
+<script>
+  function updateProgress() {
+    const article = document.querySelector("article");
+    const bar = document.getElementById("reading-progress");
+    if (!article || !bar) return;
+
+    const rect = article.getBoundingClientRect();
+    const articleTop = rect.top + window.scrollY;
+    const articleHeight = (article as HTMLElement).offsetHeight;
+    const viewportHeight = window.innerHeight;
+
+    const scrolled = window.scrollY - articleTop;
+    const scrollable = articleHeight - viewportHeight;
+
+    let percent = scrollable > 0 ? (scrolled / scrollable) * 100 : 100;
+    percent = Math.min(100, Math.max(0, percent));
+
+    (bar as HTMLElement).style.width = percent + "%";
+  }
+
+  document.addEventListener("scroll", updateProgress, { passive: true });
+  window.addEventListener("resize", updateProgress);
+  updateProgress();
+</script>

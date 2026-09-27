@@ -136,10 +136,22 @@ const path = Astro.url.pathname;
       scrollbar-width: none;
       gap: 1.25rem;
       padding-bottom: 0.25rem;
+      position: relative;
     }
 
     .nav-center::-webkit-scrollbar {
       display: none;
+    }
+
+    .nav-center::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0.25rem;
+      width: 2rem;
+      background: linear-gradient(to left, var(--color-bg), transparent);
+      pointer-events: none;
     }
 
     .nav-center a {
