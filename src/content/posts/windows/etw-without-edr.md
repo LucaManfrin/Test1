@@ -6,7 +6,6 @@ category: Windows
 tags:
   - Windows
   - Threat Hunting
-  - ETW
 author: "Luca Manfrin"
 published: true
 archived: false
